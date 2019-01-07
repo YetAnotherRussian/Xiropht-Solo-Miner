@@ -955,10 +955,14 @@ namespace Xiropht_Solo_Miner
             var currentBlockId = CurrentBlockId;
             var currentBlockTimestamp = CurrentBlockTimestampCreate;
 
+            var currentBlockDifficulty = float.Parse(CurrentBlockDifficulty);
+
+
+            StringBuilder numberBuilder = new StringBuilder();
 
             while (CanMining && !cts.IsCancellationRequested)
             {
-                var currentBlockDifficulty = float.Parse(CurrentBlockDifficulty);
+
 
                 if (CurrentBlockId != currentBlockId || currentBlockTimestamp != CurrentBlockTimestampCreate)
                 {
@@ -967,11 +971,8 @@ namespace Xiropht_Solo_Miner
                     listMathCalculation.Clear();
                     ListMathCalculation.Clear();
                 }
-                StringBuilder numberBuilder = new StringBuilder();
-
                 var randomJobSize = ("" + ClassUtils.GetRandomBetweenJob(minRange, maxRange)).Length;
-                string randomOperator =
-                    randomOperatorCalculation[ClassUtils.GetRandomBetween(0, randomOperatorCalculation.Length - 1)];
+                string randomOperator = randomOperatorCalculation[ClassUtils.GetRandomBetween(0, randomOperatorCalculation.Length - 1)];
 
                 string firstNombre = "0";
                 while (float.Parse(firstNombre) > maxRange || float.Parse(firstNombre) <= 0)
@@ -1073,7 +1074,7 @@ namespace Xiropht_Solo_Miner
                         }
 
 
-                        string encryptedShare = firstNombre + " " + randomOperator + " " + secondNombre;
+                        string encryptedShare = calcul;
 
 
                         encryptedShare = ClassUtils.StringToHex(encryptedShare + CurrentBlockTimestampCreate);
@@ -1081,7 +1082,6 @@ namespace Xiropht_Solo_Miner
                         for (int i = 0; i < roundMethod; i++)
                         {
                             encryptedShare = ClassAlgo.GetEncryptedResult(CurrentBlockAlgorithm, encryptedShare, CurrentBlockKey, roundSize, Encoding.UTF8.GetBytes(roundKey));
-
                         }
 
                         encryptedShare = ClassAlgo.GetEncryptedResult(CurrentBlockAlgorithm, encryptedShare, CurrentBlockKey, roundSize, Encoding.UTF8.GetBytes(roundKey));

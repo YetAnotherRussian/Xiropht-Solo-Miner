@@ -125,7 +125,7 @@ namespace Xiropht_Solo_Miner
                           aes.CreateEncryptor(), CryptoStreamMode.Write))
                         {
                             cs.Write(textByte, 0, textByte.Length);
-                            cs.Close();
+                            cs.FlushFinalBlock();
                             return BitConverter.ToString(ms.ToArray());
                         }
                     }
@@ -266,6 +266,7 @@ namespace Xiropht_Solo_Miner
                             byte[] plainTextBytes = new byte[cipherTextBytes.Length];
                             int decryptedByteCount = cryptoStream.Read(plainTextBytes, 0, plainTextBytes.Length);
                             memoryStream.Close();
+                            cryptoStream.FlushFinalBlock();
                             cryptoStream.Close();
                             return Encoding.ASCII.GetString(plainTextBytes, 0, decryptedByteCount);
                         }
