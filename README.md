@@ -31,4 +31,4 @@ Hashrate test:
 
 -> Celeron G3930 (On Windows 10): 2150C/s | 1200H/s | Accurate Rate 55,81% Cache Enabled.
 
-For more informations about how work the Xiropht Mining System, please check out the Wiki.
+For more informations about how work the Xiropht Mining System, please check out the Wiki: https://github.com/XIROPHT/Xiropht-Solo-Miner/wiki
