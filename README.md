@@ -26,7 +26,9 @@ This release as been compiled into Debug Mode, because we are currently in priva
 Hashrate test:
 
 -> Raspberry PI 3 (On Raspberian OS): 1554C/s | 903H/s | Accurate Rate 58,11% Cache Enabled.
+
 -> Ryzen 7 2700x No OC (On Windows 10): 4015C/s | 2590 H/s | Accurate Rate 64,51% Cache Enabled.
+
 -> Celeron G3930 (On Windows 10): 2150C/s | 1200H/s | Accurate Rate 55,81% Cache Enabled.
 
 For more informations about how work the Xiropht Mining System, please check out the Wiki.
