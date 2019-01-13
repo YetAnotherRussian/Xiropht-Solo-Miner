@@ -5,7 +5,7 @@ Official Xiropht Solo Miner, this is the first stable version.
 
 **Once the main phase network is released, all next update will are in release mode for disable log file and debug mode.**
 
-**We suggest to compile the wallet in Release Mode for disable log files.**
+**In production, we suggest to compile the wallet in Release Mode for disable log files.**
 
 Windows:
 
