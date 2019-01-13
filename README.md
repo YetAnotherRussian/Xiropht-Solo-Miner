@@ -1,10 +1,6 @@
 # Xiropht-Solo-Miner
 Official Xiropht Solo Miner, this is the first stable version.
 
-**Be carefull , we are currently in phase of test , all versions released and uploaded are compiled in debug mode for permit everyone to get informations of possible issues from log files until to release the main phase network.**
-
-**Once the main phase network is released, all next update will are in release mode for disable log file and debug mode.**
-
 **In production, we suggest to compile in Release Mode for disable log files.**
 
 Windows:
