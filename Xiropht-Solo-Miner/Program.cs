@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -90,6 +91,8 @@ namespace Xiropht_Solo_Miner
 
         static void Main(string[] args)
         {
+            Thread.CurrentThread.Name = Path.GetFileName(Environment.GetCommandLineArgs()[0]);
+            ClassConsole.WriteLine("Xiropht Solo Miner - " + Assembly.GetExecutingAssembly().GetName().Version + "b", 4);
 #if DEBUG
             AppDomain.CurrentDomain.UnhandledException += delegate (object sender, UnhandledExceptionEventArgs args2)
             {
@@ -172,6 +175,8 @@ namespace Xiropht_Solo_Miner
                     }
                 }
                 ThreadMining = new Thread[TotalThreadMining];
+
+
                 TotalMiningRound = new List<int>();
                 TotalMiningHashrateRound = new List<int>();
                 for (int i = 0; i < TotalThreadMining; i++)
