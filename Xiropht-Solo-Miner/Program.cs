@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Xiropht_Connector_All.Seed;
+using Xiropht_Connector_All.Setting;
 using Xiropht_Connector_All.SoloMining;
 
 namespace Xiropht_Solo_Miner
@@ -58,6 +59,8 @@ namespace Xiropht_Solo_Miner
         public static int TotalShareAccepted;
         public static int TotalShareInvalid;
         public static long LastPacketReceived;
+        private const int TimeoutPacketReceived = 60; // Max 60 seconds.
+        private static int PacketSpeedSend;
 
         /// <summary>
         /// For Proxy.
@@ -89,10 +92,21 @@ namespace Xiropht_Solo_Miner
         /// </summary>
         private static string WalletAddress;
 
+        private static bool IsLinux;
+
+        /// <summary>
+        /// Main
+        /// </summary>
+        /// <param name="args"></param>
         static void Main(string[] args)
         {
             Thread.CurrentThread.Name = Path.GetFileName(Environment.GetCommandLineArgs()[0]);
             ClassConsole.WriteLine("Xiropht Solo Miner - " + Assembly.GetExecutingAssembly().GetName().Version + "b", 4);
+
+            if (Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX)
+            {
+                IsLinux = true;
+            }
 #if DEBUG
             AppDomain.CurrentDomain.UnhandledException += delegate (object sender, UnhandledExceptionEventArgs args2)
             {
@@ -188,6 +202,20 @@ namespace Xiropht_Solo_Miner
                     }
                 }
 
+
+                using (var process = Process.GetCurrentProcess())
+                {
+                    var affinityCurrent = process.ProcessorAffinity.ToInt32();
+
+                    int coreMask = 1;
+                    for (int i = 1; i < TotalThreadMining; i++)
+                    {
+                        coreMask = coreMask ^ (1 << i);
+                    }
+                    var affinity = new IntPtr(affinityCurrent & coreMask);
+                    process.ProcessorAffinity = affinity;
+                }
+
                 Console.WriteLine("Start to connect to the network..");
                 new Thread(async () => await StartConnectMinerAsync()).Start();
             }
@@ -266,6 +294,18 @@ namespace Xiropht_Solo_Miner
                         TotalMiningHashrateRound.Add(0);
                     }
                 }
+                using (var process = Process.GetCurrentProcess())
+                {
+                    var affinityCurrent = process.ProcessorAffinity.ToInt32();
+
+                    int coreMask = 1;
+                    for (int i = 1; i < TotalThreadMining; i++)
+                    {
+                        coreMask = coreMask ^ (1 << i);
+                    }
+                    var affinity = new IntPtr(affinityCurrent & coreMask);
+                    process.ProcessorAffinity = affinity;
+                }
 
                 Console.WriteLine("Select thread priority: 0 = Lowest, 1 = BelowNormal, 2 = Normal, 3 = AboveNormal, 4 = Highest [Default: 2]:");
 
@@ -305,6 +345,7 @@ namespace Xiropht_Solo_Miner
                 }
             });
             threadCommand.Start();
+
         }
 
         /// <summary>
@@ -314,8 +355,10 @@ namespace Xiropht_Solo_Miner
         {
             Console.WriteLine("Write config.ini file..");
             File.Create(GetCurrentPathConfig()).Close();
-            StreamWriter writeConfig = new StreamWriter(GetCurrentPathConfig());
-            writeConfig.AutoFlush = true;
+            StreamWriter writeConfig = new StreamWriter(GetCurrentPathConfig())
+            {
+                AutoFlush = true
+            };
             writeConfig.WriteLine("WALLET_ADDRESS=" + WalletAddress);
             writeConfig.WriteLine("MINING_THREAD=" + TotalThreadMining);
             writeConfig.WriteLine("MINING_THREAD_PRIORITY=" + ThreadMiningPriority);
@@ -375,7 +418,7 @@ namespace Xiropht_Solo_Miner
             }
             if (!UseProxy)
             {
-                while (!await ObjectSeedNodeNetwork.StartConnectToSeedAsync(string.Empty))
+                while (!await ObjectSeedNodeNetwork.StartConnectToSeedAsync(string.Empty, ClassConnectorSetting.SeedNodePort, IsLinux))
                 {
                     ClassConsole.WriteLine("Can't connect to the network, retry in 5 seconds..", 3);
                     Thread.Sleep(5000);
@@ -383,10 +426,18 @@ namespace Xiropht_Solo_Miner
             }
             else
             {
-                while (!await ObjectSeedNodeNetwork.StartConnectToSeedAsync(ProxyHost, ProxyPort))
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
+                while (!await ObjectSeedNodeNetwork.StartConnectToSeedAsync(ProxyHost, ProxyPort, IsLinux))
                 {
+                    stopwatch.Restart();
                     ClassConsole.WriteLine("Can't connect to the proxy, retry in 5 seconds..", 3);
                     Thread.Sleep(5000);
+                }
+                stopwatch.Stop();
+                if (stopwatch.ElapsedMilliseconds > 0)
+                {
+                    PacketSpeedSend = (int)stopwatch.ElapsedMilliseconds;
                 }
             }
             IsConnected = true;
@@ -396,26 +447,40 @@ namespace Xiropht_Solo_Miner
             }
             if (!UseProxy)
             {
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
                 await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(CertificateConnection, string.Empty, false, false);
+                stopwatch.Stop();
+                if (stopwatch.ElapsedMilliseconds > 0)
+                {
+                    PacketSpeedSend = (int)stopwatch.ElapsedMilliseconds;
+                }
             }
             LastPacketReceived = DateTimeOffset.Now.ToUnixTimeSeconds();
             if (!UseProxy)
             {
-                Thread.Sleep(1000);
+                if (PacketSpeedSend > 0)
+                {
+                    Thread.Sleep(PacketSpeedSend);
+                }
                 ClassConsole.WriteLine("Send wallet address for login your solo miner..", 2);
                 await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync("MINER|" + WalletAddress, CertificateConnection, false, true);
             }
             else
             {
+                if (PacketSpeedSend > 0)
+                {
+                    Thread.Sleep(PacketSpeedSend);
+                }
                 ClassConsole.WriteLine("Send wallet address for login your solo miner..", 2);
                 await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync("MINER|" + WalletAddress + "|"+MiningDifficulty+"|"+MiningPositionDifficulty, string.Empty, false, false);
             }
             ListenNetwork();
+            CheckNetwork();
 
             if (!_checkNetworkEnabled)
             {
                 _checkNetworkEnabled = true;
-                CheckNetwork();
                 CalculateHashrate();
             }
         }
@@ -425,6 +490,11 @@ namespace Xiropht_Solo_Miner
         /// </summary>
         private static void CheckNetwork()
         {
+            if (ThreadCheckNetwork != null && (ThreadCheckNetwork.IsAlive || ThreadCheckNetwork != null))
+            {
+                ThreadCheckNetwork.Abort();
+                GC.SuppressFinalize(ThreadCheckNetwork);
+            }
             ThreadCheckNetwork = new Thread(async delegate ()
             {
                 ClassConsole.WriteLine("Check connection enabled.", 2);
@@ -432,14 +502,14 @@ namespace Xiropht_Solo_Miner
                 Thread.Sleep(5000);
                 while (true)
                 {
-                    if (!IsConnected || !LoginAccepted || !ObjectSeedNodeNetwork.GetStatusConnectToSeed())
+                    if (!IsConnected || !LoginAccepted || !ObjectSeedNodeNetwork.GetStatusConnectToSeed(IsLinux))
                     {
                         ClassConsole.WriteLine("Network connection lost or aborted, retry to connect..", 3);
                         await StopMiningAsync();
                         CurrentBlockId = "";
                         CurrentBlockHash = "";
-                        var resultConnect = StartConnectMinerAsync();
-                        resultConnect.Wait();
+                        new Thread(async () => await StartConnectMinerAsync()).Start();
+                        break;
                     }
                     
 
@@ -540,7 +610,7 @@ namespace Xiropht_Solo_Miner
         /// <param name="packet"></param>
         private static async Task HandlePacketMiningAsync(string packet)
         {
-            //LastPacketReceived = DateTimeOffset.Now.ToUnixTimeSeconds();
+            LastPacketReceived = DateTimeOffset.Now.ToUnixTimeSeconds();
             try
             {
                 var splitPacket = packet.Split(new[] { "|" }, StringSplitOptions.None);
@@ -845,14 +915,14 @@ namespace Xiropht_Solo_Miner
         private static void MiningProcessingRequest()
         {
 
-            Task.Run(async delegate ()
+            new Thread(async delegate ()
             {
                 if (!UseProxy)
                 {
                     while (IsConnected)
                     {
 
-                        if(!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskListBlockMethod, CertificateConnection, false, true))
+                        if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskListBlockMethod, CertificateConnection, false, true))
                         {
                             IsConnected = false;
                             LoginAccepted = false;
@@ -861,7 +931,7 @@ namespace Xiropht_Solo_Miner
                         await Task.Delay(1000);
                         if (ListeMiningMethodContent.Count > 0)
                         {
-                            if(!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskCurrentBlockMining, CertificateConnection, false, true))
+                            if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskCurrentBlockMining, CertificateConnection, false, true))
                             {
                                 IsConnected = false;
                                 LoginAccepted = false;
@@ -873,14 +943,14 @@ namespace Xiropht_Solo_Miner
                 }
                 else
                 {
-                    if(!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskListBlockMethod, string.Empty, false, false))
+                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskListBlockMethod, string.Empty, false, false))
                     {
                         IsConnected = false;
                     }
                     await Task.Delay(1000);
                     if (ListeMiningMethodContent.Count > 0)
                     {
-                        if(!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskCurrentBlockMining, string.Empty, false, false))
+                        if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskCurrentBlockMining, string.Empty, false, false))
                         {
                             IsConnected = false;
                             LoginAccepted = false;
@@ -888,7 +958,7 @@ namespace Xiropht_Solo_Miner
                     }
                     await Task.Delay(1000);
                 }
-            });
+            }).Start();
         }
 
         /// <summary>
