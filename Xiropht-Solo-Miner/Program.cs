@@ -203,17 +203,18 @@ namespace Xiropht_Solo_Miner
                 }
 
 
-                using (var process = Process.GetCurrentProcess())
+                if (!IsLinux)
                 {
-                    var affinityCurrent = process.ProcessorAffinity.ToInt32();
-
-                    int coreMask = 1;
-                    for (int i = 1; i < TotalThreadMining; i++)
+                    using (var process = Process.GetCurrentProcess())
                     {
-                        coreMask = coreMask ^ (1 << i);
+                        int coreMask = 1;
+                        for (int i = 1; i < TotalThreadMining; i++)
+                        {
+                            coreMask = coreMask ^ (1 << i);
+                        }
+                        var affinity = new IntPtr(coreMask);
+                        process.ProcessorAffinity = affinity;
                     }
-                    var affinity = new IntPtr(affinityCurrent & coreMask);
-                    process.ProcessorAffinity = affinity;
                 }
 
                 Console.WriteLine("Start to connect to the network..");
@@ -294,17 +295,18 @@ namespace Xiropht_Solo_Miner
                         TotalMiningHashrateRound.Add(0);
                     }
                 }
-                using (var process = Process.GetCurrentProcess())
+                if (!IsLinux)
                 {
-                    var affinityCurrent = process.ProcessorAffinity.ToInt32();
-
-                    int coreMask = 1;
-                    for (int i = 1; i < TotalThreadMining; i++)
+                    using (var process = Process.GetCurrentProcess())
                     {
-                        coreMask = coreMask ^ (1 << i);
+                        int coreMask = 1;
+                        for (int i = 1; i < TotalThreadMining; i++)
+                        {
+                            coreMask = coreMask ^ (1 << i);
+                        }
+                        var affinity = new IntPtr(coreMask);
+                        process.ProcessorAffinity = affinity;
                     }
-                    var affinity = new IntPtr(affinityCurrent & coreMask);
-                    process.ProcessorAffinity = affinity;
                 }
 
                 Console.WriteLine("Select thread priority: 0 = Lowest, 1 = BelowNormal, 2 = Normal, 3 = AboveNormal, 4 = Highest [Default: 2]:");
