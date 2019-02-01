@@ -129,5 +129,7 @@ namespace Xiropht_Solo_Miner
                 return hashedInputStringBuilder.ToString();
             }
         }
+
+
     }
 }
