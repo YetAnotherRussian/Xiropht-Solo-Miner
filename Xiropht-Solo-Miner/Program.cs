@@ -203,19 +203,7 @@ namespace Xiropht_Solo_Miner
                 }
 
 
-                if (!IsLinux)
-                {
-                    using (var process = Process.GetCurrentProcess())
-                    {
-                        int coreMask = 1;
-                        for (int i = 1; i < TotalThreadMining; i++)
-                        {
-                            coreMask = coreMask ^ (1 << i);
-                        }
-                        var affinity = new IntPtr(coreMask);
-                        process.ProcessorAffinity = affinity;
-                    }
-                }
+
 
                 Console.WriteLine("Start to connect to the network..");
                 new Thread(async () => await StartConnectMinerAsync()).Start();
@@ -293,19 +281,6 @@ namespace Xiropht_Solo_Miner
                     {
                         TotalMiningRound.Add(0);
                         TotalMiningHashrateRound.Add(0);
-                    }
-                }
-                if (!IsLinux)
-                {
-                    using (var process = Process.GetCurrentProcess())
-                    {
-                        int coreMask = 1;
-                        for (int i = 1; i < TotalThreadMining; i++)
-                        {
-                            coreMask = coreMask ^ (1 << i);
-                        }
-                        var affinity = new IntPtr(coreMask);
-                        process.ProcessorAffinity = affinity;
                     }
                 }
 
@@ -1039,7 +1014,7 @@ namespace Xiropht_Solo_Miner
             float totalRound = 0;
             StringBuilder numberBuilder = new StringBuilder();
 
-            while (CanMining && !cts.IsCancellationRequested)
+            while (CanMining)
             {
 
                 if (totalRound >= maxRange || totalRound >= float.MaxValue)
@@ -1143,24 +1118,151 @@ namespace Xiropht_Solo_Miner
                     {
                         string calcul = firstNombre + " " + randomOperatorCalculation[k] + " " + secondNombre;
 
-
-                        var calculCompute = ClassUtils.GetResultFromMathCalculation(firstNombre, secondNombre, randomOperatorCalculation[k]);
+                        float calculCompute = 0;
+                        if (calcul.Contains("+"))
+                        {
+                            calculCompute = float.Parse(firstNombre) + float.Parse(secondNombre);
+                            calculCompute = (float)Math.Round(calculCompute, 0);
+                        }
+                        else if(calcul.Contains("*"))
+                        {
+                            calculCompute = float.Parse(firstNombre) * float.Parse(secondNombre);
+                            calculCompute = (float)Math.Round(calculCompute, 0);
+                        }
+                        else if (calcul.Contains("%"))
+                        {
+                            calculCompute = float.Parse(firstNombre) % float.Parse(secondNombre);
+                            calculCompute = (float)Math.Round(calculCompute, 0);
+                        }
+                        else if (calcul.Contains("-"))
+                        {
+                            calculCompute = float.Parse(firstNombre) - float.Parse(secondNombre);
+                            calculCompute = (float)Math.Round(calculCompute, 0);
+                        }
+                        else if (calcul.Contains("/"))
+                        {
+                            calculCompute = float.Parse(firstNombre) / float.Parse(secondNombre);
+                            calculCompute = (float)Math.Round(calculCompute, 0);
+                        }
+                        //var calculCompute = ClassUtils.GetResultFromMathCalculation(firstNombre, secondNombre, randomOperatorCalculation[k]);
 
                         if (calculCompute >= 1 && calculCompute <= currentBlockDifficulty)
                         {
-                            if (!listMathCalculation.ContainsKey(calcul) && !ListMathCalculation.ContainsKey(calcul))
+
+
+                            string encryptedShare = calcul;
+
+
+                            encryptedShare = ClassUtils.StringToHex(encryptedShare + CurrentBlockTimestampCreate);
+                            encryptedShare = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Xor, encryptedShare, "" + keyXorMethod, roundSize, null);
+                            for (int i = 0; i < roundMethod; i++)
                             {
-                                if (SaveShareStatus)
+                                encryptedShare = ClassAlgo.GetEncryptedResult(CurrentBlockAlgorithm, encryptedShare, CurrentBlockKey, roundSize, Encoding.UTF8.GetBytes(roundKey));
+                            }
+
+                            encryptedShare = ClassAlgo.GetEncryptedResult(CurrentBlockAlgorithm, encryptedShare, CurrentBlockKey, roundSize, Encoding.UTF8.GetBytes(roundKey));
+
+                            encryptedShare = ClassUtils.GenerateSHA512(encryptedShare);
+                            string hashShare = ClassUtils.GenerateSHA512(encryptedShare);
+
+                            TotalMiningHashrateRound[idThread]++;
+                            if (!CanMining)
+                            {
+                                return;
+                            }
+
+                            if (!ProxyWantShare)
+                            {
+                                if (hashShare == CurrentBlockIndication)
                                 {
-                                    if (ShareJobRange)
+
+                                    ClassConsole.WriteLine("Share for unlock the block seems to be found, submit it: " + calcul + " \n", 1);
+
+
+                                    if (!UseProxy)
                                     {
-                                        listMathCalculation.Add(calcul, string.Empty);
+                                        new Thread(async delegate ()
+                                        {
+
+                                            if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                                ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                                calculCompute +
+                                                "|" + calcul + "|" + hashShare + "|" + CurrentBlockId, CertificateConnection, false, true))
+                                            {
+                                                IsConnected = false;
+                                                LoginAccepted = false;
+                                            }
+                                        }).Start();
                                     }
                                     else
                                     {
-                                        ListMathCalculation.Add(calcul, string.Empty);
+                                        new Thread(async delegate ()
+                                        {
+                                            if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                             ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                             calculCompute +
+                                             "|" + calcul + "|" + hashShare + "|" + CurrentBlockId, string.Empty, false, false))
+                                            {
+                                                IsConnected = false;
+                                                LoginAccepted = false;
+                                            }
+                                        }).Start();
                                     }
                                 }
+                            }
+                            else
+                            {
+
+
+                                new Thread(async delegate ()
+                                {
+                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                    ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                    calculCompute +
+                                    "|" + calcul + "|" + hashShare + "|" + CurrentBlockId, string.Empty, false, false))
+                                    {
+                                        IsConnected = false;
+                                        LoginAccepted = false;
+                                    }
+                                }).Start();
+                            }
+
+
+                        }
+                        else
+                        {
+                            calcul = secondNombre + " " + randomOperatorCalculation[k] + " " + firstNombre;
+
+                            calculCompute = 0;
+                            if (calcul.Contains("+"))
+                            {
+                                calculCompute = float.Parse(secondNombre) + float.Parse(firstNombre);
+                                calculCompute = (float)Math.Round(calculCompute, 0);
+                            }
+                            else if (calcul.Contains("*"))
+                            {
+                                calculCompute = float.Parse(secondNombre) * float.Parse(firstNombre);
+                                calculCompute = (float)Math.Round(calculCompute, 0);
+                            }
+                            else if (calcul.Contains("%"))
+                            {
+                                calculCompute = float.Parse(secondNombre) % float.Parse(firstNombre);
+                                calculCompute = (float)Math.Round(calculCompute, 0);
+                            }
+                            else if (calcul.Contains("-"))
+                            {
+                                calculCompute = float.Parse(secondNombre) - float.Parse(firstNombre);
+                                calculCompute = (float)Math.Round(calculCompute, 0);
+                            }
+                            else if (calcul.Contains("/"))
+                            {
+                                calculCompute = float.Parse(secondNombre) / float.Parse(firstNombre);
+                                calculCompute = (float)Math.Round(calculCompute, 0);
+                            }
+                            //var calculCompute = ClassUtils.GetResultFromMathCalculation(firstNombre, secondNombre, randomOperatorCalculation[k]);
+
+                            if (calculCompute >= 1 && calculCompute <= currentBlockDifficulty)
+                            {
 
 
                                 string encryptedShare = calcul;
@@ -1226,233 +1328,20 @@ namespace Xiropht_Solo_Miner
                                 else
                                 {
 
-                                    if (!ListOfShare.Contains(encryptedShare))
+
+                                    new Thread(async delegate ()
                                     {
-                                        ListOfShare.Add(encryptedShare);
-                                        new Thread(async delegate ()
+                                        if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                        ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                        calculCompute +
+                                        "|" + calcul + "|" + hashShare + "|" + CurrentBlockId, string.Empty, false, false))
                                         {
-                                            if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                            ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                            calculCompute +
-                                            "|" + calcul + "|" + hashShare + "|" + CurrentBlockId, string.Empty, false, false))
-                                            {
-                                                IsConnected = false;
-                                                LoginAccepted = false;
-                                            }
-                                        }).Start();
-                                    }
+                                            IsConnected = false;
+                                            LoginAccepted = false;
+                                        }
+                                    }).Start();
                                 }
                             }
-
-                            // Invert math calculation, for check if the result can is good for encrypt it.
-                            calcul = secondNombre + " " + randomOperatorCalculation[k] + " " + firstNombre;
-
-                            calculCompute = ClassUtils.GetResultFromMathCalculation(secondNombre, firstNombre, randomOperatorCalculation[k]);
-
-                            if (calculCompute >= 1 && calculCompute <= currentBlockDifficulty)
-                            {
-                                if (!listMathCalculation.ContainsKey(calcul) && !ListMathCalculation.ContainsKey(calcul))
-                                {
-                                    if (SaveShareStatus)
-                                    {
-                                        if (ShareJobRange)
-                                        {
-                                            listMathCalculation.Add(calcul, string.Empty);
-                                        }
-                                        else
-                                        {
-                                            ListMathCalculation.Add(calcul, string.Empty);
-                                        }
-                                    }
-
-
-                                    string encryptedShare = calcul;
-
-
-                                    encryptedShare = ClassUtils.StringToHex(encryptedShare + CurrentBlockTimestampCreate);
-                                    encryptedShare = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Xor, encryptedShare, "" + keyXorMethod, roundSize, null);
-                                    for (int i = 0; i < roundMethod; i++)
-                                    {
-                                        encryptedShare = ClassAlgo.GetEncryptedResult(CurrentBlockAlgorithm, encryptedShare, CurrentBlockKey, roundSize, Encoding.UTF8.GetBytes(roundKey));
-                                    }
-
-                                    encryptedShare = ClassAlgo.GetEncryptedResult(CurrentBlockAlgorithm, encryptedShare, CurrentBlockKey, roundSize, Encoding.UTF8.GetBytes(roundKey));
-
-                                    encryptedShare = ClassUtils.GenerateSHA512(encryptedShare);
-                                    string hashShare = ClassUtils.GenerateSHA512(encryptedShare);
-
-                                    TotalMiningHashrateRound[idThread]++;
-                                    if (!CanMining)
-                                    {
-                                        return;
-                                    }
-
-                                    if (!ProxyWantShare)
-                                    {
-                                        if (hashShare == CurrentBlockIndication)
-                                        {
-
-                                            ClassConsole.WriteLine("Share for unlock the block seems to be found, submit it: " + calcul + " \n", 1);
-
-
-                                            if (!UseProxy)
-                                            {
-                                                new Thread(async delegate ()
-                                                {
-
-                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                        ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                                        calculCompute +
-                                                        "|" + calcul + "|" + hashShare + "|" + CurrentBlockId, CertificateConnection, false, true))
-                                                    {
-                                                        IsConnected = false;
-                                                        LoginAccepted = false;
-                                                    }
-                                                }).Start();
-                                            }
-                                            else
-                                            {
-                                                new Thread(async delegate ()
-                                                {
-                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                     ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                                     calculCompute +
-                                                     "|" + calcul + "|" + hashShare + "|" + CurrentBlockId, string.Empty, false, false))
-                                                    {
-                                                        IsConnected = false;
-                                                        LoginAccepted = false;
-                                                    }
-                                                }).Start();
-                                            }
-                                        }
-                                    }
-                                    else
-                                    {
-
-                                        if (!ListOfShare.Contains(encryptedShare))
-                                        {
-                                            ListOfShare.Add(encryptedShare);
-                                            new Thread(async delegate ()
-                                            {
-                                                if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                                calculCompute +
-                                                "|" + calcul + "|" + hashShare + "|" + CurrentBlockId, string.Empty, false, false))
-                                                {
-                                                    IsConnected = false;
-                                                    LoginAccepted = false;
-                                                }
-                                            }).Start();
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        else // Invert math calculation, for check if the result can is good for encrypt it.
-                        {
-                            calcul = secondNombre + " " + randomOperatorCalculation[k] + " " + firstNombre;
-
-                            calculCompute = ClassUtils.GetResultFromMathCalculation(secondNombre, firstNombre, randomOperatorCalculation[k]);
-
-                            if (calculCompute >= 1 && calculCompute <= currentBlockDifficulty)
-                            {
-                                if (!listMathCalculation.ContainsKey(calcul) && !ListMathCalculation.ContainsKey(calcul))
-                                {
-                                    if (SaveShareStatus)
-                                    {
-                                        if (ShareJobRange)
-                                        {
-                                            listMathCalculation.Add(calcul, string.Empty);
-                                        }
-                                        else
-                                        {
-                                            ListMathCalculation.Add(calcul, string.Empty);
-                                        }
-                                    }
-
-
-                                    string encryptedShare = calcul;
-
-
-                                    encryptedShare = ClassUtils.StringToHex(encryptedShare + CurrentBlockTimestampCreate);
-                                    encryptedShare = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Xor, encryptedShare, "" + keyXorMethod, roundSize, null);
-                                    for (int i = 0; i < roundMethod; i++)
-                                    {
-                                        encryptedShare = ClassAlgo.GetEncryptedResult(CurrentBlockAlgorithm, encryptedShare, CurrentBlockKey, roundSize, Encoding.UTF8.GetBytes(roundKey));
-                                    }
-
-                                    encryptedShare = ClassAlgo.GetEncryptedResult(CurrentBlockAlgorithm, encryptedShare, CurrentBlockKey, roundSize, Encoding.UTF8.GetBytes(roundKey));
-
-                                    encryptedShare = ClassUtils.GenerateSHA512(encryptedShare);
-                                    string hashShare = ClassUtils.GenerateSHA512(encryptedShare);
-
-                                    TotalMiningHashrateRound[idThread]++;
-                                    if (!CanMining)
-                                    {
-                                        return;
-                                    }
-
-                                    if (!ProxyWantShare)
-                                    {
-                                        if (hashShare == CurrentBlockIndication)
-                                        {
-
-                                            ClassConsole.WriteLine("Share for unlock the block seems to be found, submit it: " + calcul + " \n", 1);
-
-
-                                            if (!UseProxy)
-                                            {
-                                                new Thread(async delegate ()
-                                                {
-
-                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                        ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                                        calculCompute +
-                                                        "|" + calcul + "|" + hashShare + "|" + CurrentBlockId, CertificateConnection, false, true))
-                                                    {
-                                                        IsConnected = false;
-                                                        LoginAccepted = false;
-                                                    }
-                                                }).Start();
-                                            }
-                                            else
-                                            {
-                                                new Thread(async delegate ()
-                                                {
-                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                     ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                                     calculCompute +
-                                                     "|" + calcul + "|" + hashShare + "|" + CurrentBlockId, string.Empty, false, false))
-                                                    {
-                                                        IsConnected = false;
-                                                        LoginAccepted = false;
-                                                    }
-                                                }).Start();
-                                            }
-                                        }
-                                    }
-                                    else
-                                    {
-
-                                        if (!ListOfShare.Contains(encryptedShare))
-                                        {
-                                            ListOfShare.Add(encryptedShare);
-                                            new Thread(async delegate ()
-                                            {
-                                                if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                                calculCompute +
-                                                "|" + calcul + "|" + hashShare + "|" + CurrentBlockId, string.Empty, false, false))
-                                                {
-                                                    IsConnected = false;
-                                                    LoginAccepted = false;
-                                                }
-                                            }).Start();
-                                        }
-                                    }
-                                }
-                            }
-
                         }
                     }
                     TotalMiningRound[idThread]++;
@@ -1466,100 +1355,100 @@ namespace Xiropht_Solo_Miner
         private static void CalculateHashrate()
         {
 
-            Task.Run(async () =>
-            {
-                var counterTime = 0;
-                while (true)
-                {
-                    try
-                    {
+            new Thread(() =>
+             {
+                 var counterTime = 0;
+                 while (true)
+                 {
+                     try
+                     {
 
-                        int totalRound = 1;
-                        int totalRoundHashrate = 1;
-                        for (int i = 0; i < TotalMiningRound.Count; i++)
-                        {
-                            if (i < TotalMiningRound.Count)
-                            {
-                                totalRound += TotalMiningRound[i];
-                                if (counterTime >= HashrateIntervalCalculation && CanMining)
-                                {
-                                    ClassConsole.WriteLine("Calculation Speed Thread " + i + " : " + (TotalMiningRound[i] / HashrateIntervalCalculation) + " C/s", 4);
-                                }
-                            }
-                        }
+                         int totalRound = 1;
+                         int totalRoundHashrate = 1;
+                         for (int i = 0; i < TotalMiningRound.Count; i++)
+                         {
+                             if (i < TotalMiningRound.Count)
+                             {
+                                 totalRound += TotalMiningRound[i];
+                                 if (counterTime >= HashrateIntervalCalculation && CanMining)
+                                 {
+                                     ClassConsole.WriteLine("Calculation Speed Thread " + i + " : " + (TotalMiningRound[i] / HashrateIntervalCalculation) + " C/s", 4);
+                                 }
+                             }
+                         }
 
-                        for (int i = 0; i < TotalMiningHashrateRound.Count; i++)
-                        {
-                            if (i < TotalMiningHashrateRound.Count)
-                            {
-                                totalRoundHashrate += TotalMiningHashrateRound[i];
-                                if (counterTime >= HashrateIntervalCalculation && CanMining)
-                                {
-                                    ClassConsole.WriteLine("Encryption Speed Thread " + i + " : " + (TotalMiningHashrateRound[i] / HashrateIntervalCalculation) + " H/s", 4);
-                                }
-                            }
-                        }
+                         for (int i = 0; i < TotalMiningHashrateRound.Count; i++)
+                         {
+                             if (i < TotalMiningHashrateRound.Count)
+                             {
+                                 totalRoundHashrate += TotalMiningHashrateRound[i];
+                                 if (counterTime >= HashrateIntervalCalculation && CanMining)
+                                 {
+                                     ClassConsole.WriteLine("Encryption Speed Thread " + i + " : " + (TotalMiningHashrateRound[i] / HashrateIntervalCalculation) + " H/s", 4);
+                                 }
+                             }
+                         }
 
 
-                        TotalCalculation = (totalRound / HashrateIntervalCalculation);
-                        TotalHashrate = (totalRoundHashrate / HashrateIntervalCalculation);
-                        float accuratePourcent = 0;
-                        if (TotalHashrate != 0 && TotalCalculation != 0)
-                        {
-                            accuratePourcent = ((float)TotalHashrate / (float)TotalCalculation) * 100;
-                            accuratePourcent = (float)Math.Round(accuratePourcent, 2);
-                        }
-                        for (int i = 0; i < TotalMiningRound.Count; i++)
-                        {
-                            if (i < TotalMiningRound.Count)
-                            {
-                                TotalMiningRound[i] = 0;
-                            }
-                        }
-                        for (int i = 0; i < TotalMiningHashrateRound.Count; i++)
-                        {
-                            if (i < TotalMiningHashrateRound.Count)
-                            {
-                                TotalMiningHashrateRound[i] = 0;
-                            }
-                        }
-                        if (CanMining)
-                        {
-                            if (counterTime == HashrateIntervalCalculation)
-                            {
-                                if (!UseProxy)
-                                {
-                                    ClassConsole.WriteLine("Mining Speed: " + TotalCalculation + " C/s | " + TotalHashrate + " H/s | Accurate Rate "+accuratePourcent+"% > UNLOCK[" + TotalBlockAccepted + "] REFUSED[" + TotalBlockRefused + "]", 4);
-                                }
-                                else
-                                {
-                                    if (ProxyWantShare)
-                                    {
-                                        ClassConsole.WriteLine("Mining Speed: " + TotalCalculation + " C/s | " + TotalHashrate + " H/s | Accurate Rate " + accuratePourcent + "% > GOOD[" + TotalShareAccepted + "] INVALID[" + TotalShareInvalid + "]", 4);
-                                    }
-                                    else
-                                    {
-                                        ClassConsole.WriteLine("Mining Speed: " + TotalCalculation + " C/s | " + TotalHashrate + " H/s | Accurate Rate " + accuratePourcent + "% > UNLOCK[" + TotalBlockAccepted + "] REFUSED[" + TotalBlockRefused + "]", 4);
-                                    }
-                                }
-                            }
-                            if (counterTime < HashrateIntervalCalculation)
-                            {
-                                counterTime++;
-                            }
-                            else
-                            {
-                                counterTime = 0;
-                            }
-                        }
+                         TotalCalculation = (totalRound / HashrateIntervalCalculation);
+                         TotalHashrate = (totalRoundHashrate / HashrateIntervalCalculation);
+                         float accuratePourcent = 0;
+                         if (TotalHashrate != 0 && TotalCalculation != 0)
+                         {
+                             accuratePourcent = ((float)TotalHashrate / (float)TotalCalculation) * 100;
+                             accuratePourcent = (float)Math.Round(accuratePourcent, 2);
+                         }
+                         for (int i = 0; i < TotalMiningRound.Count; i++)
+                         {
+                             if (i < TotalMiningRound.Count)
+                             {
+                                 TotalMiningRound[i] = 0;
+                             }
+                         }
+                         for (int i = 0; i < TotalMiningHashrateRound.Count; i++)
+                         {
+                             if (i < TotalMiningHashrateRound.Count)
+                             {
+                                 TotalMiningHashrateRound[i] = 0;
+                             }
+                         }
+                         if (CanMining)
+                         {
+                             if (counterTime == HashrateIntervalCalculation)
+                             {
+                                 if (!UseProxy)
+                                 {
+                                     ClassConsole.WriteLine("Mining Speed: " + TotalCalculation + " C/s | " + TotalHashrate + " H/s | Accurate Rate " + accuratePourcent + "% > UNLOCK[" + TotalBlockAccepted + "] REFUSED[" + TotalBlockRefused + "]", 4);
+                                 }
+                                 else
+                                 {
+                                     if (ProxyWantShare)
+                                     {
+                                         ClassConsole.WriteLine("Mining Speed: " + TotalCalculation + " C/s | " + TotalHashrate + " H/s | Accurate Rate " + accuratePourcent + "% > GOOD[" + TotalShareAccepted + "] INVALID[" + TotalShareInvalid + "]", 4);
+                                     }
+                                     else
+                                     {
+                                         ClassConsole.WriteLine("Mining Speed: " + TotalCalculation + " C/s | " + TotalHashrate + " H/s | Accurate Rate " + accuratePourcent + "% > UNLOCK[" + TotalBlockAccepted + "] REFUSED[" + TotalBlockRefused + "]", 4);
+                                     }
+                                 }
+                             }
+                             if (counterTime < HashrateIntervalCalculation)
+                             {
+                                 counterTime++;
+                             }
+                             else
+                             {
+                                 counterTime = 0;
+                             }
+                         }
 
-                    }
-                    catch
-                    {
-                    }
-                    await Task.Delay(HashrateIntervalCalculation * 1000); // Each 10 seconds
+                     }
+                     catch
+                     {
+                     }
+                     Thread.Sleep(HashrateIntervalCalculation * 1000); // Each 10 seconds
                 }
-            });
+             }).Start();
         }
 
         /// <summary>

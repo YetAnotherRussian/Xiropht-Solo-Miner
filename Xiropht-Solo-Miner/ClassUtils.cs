@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Security.Cryptography;
 using System.Text;
-using NCalc;
 
 namespace Xiropht_Solo_Miner
 {
@@ -41,9 +40,18 @@ namespace Xiropht_Solo_Miner
         /// <returns></returns>
         public static float GetRandomBetweenJob(float minimumValue, float maximumValue)
         {
-            Random rand = new Random();
-            string value = "" + Math.Round((minimumValue + rand.NextDouble() * (maximumValue - minimumValue)),0);
-            return float.Parse(value);
+            var randomNumber = new byte[1];
+
+            Generator.GetBytes(randomNumber);
+
+            var asciiValueOfRandomCharacter = Convert.ToDouble(randomNumber[0]);
+
+            var multiplier = Math.Max(0, asciiValueOfRandomCharacter / 255d - 0.00000000001d);
+
+            var range = maximumValue - minimumValue + 1;
+
+            var randomValueInRange = Math.Floor(multiplier * range);
+            return (float)(minimumValue + randomValueInRange);
         }
 
         /// <summary>
@@ -58,21 +66,6 @@ namespace Xiropht_Solo_Miner
             return BitConverter.ToString(ba).Replace("-", "");
         }
 
-        /// <summary>
-        /// Calculate a math calculation and return a result.
-        /// </summary>
-        /// <param name="number1"></param>
-        /// <param name="number2"></param>
-        /// <param name="operatorMath"></param>
-        /// <returns></returns>
-        public static float GetResultFromMathCalculation(string number1, string number2, string operatorMath)
-        {
-            Expression ex = new Expression(number1 + " " + operatorMath + " " + number2);
-
-            var result = ex.Evaluate().ToString();
-            var resultDouble = double.Parse(result);
-            return (float)resultDouble;
-        }
 
         /// <summary>
         /// Get a string from byte hash
