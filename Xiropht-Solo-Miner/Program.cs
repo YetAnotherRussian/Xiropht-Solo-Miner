@@ -1138,7 +1138,7 @@ namespace Xiropht_Solo_Miner
                             calculCompute = (float)Math.Round(calculCompute, 0);
                         }
 
-                        if (calculCompute > 1 && calculCompute <= currentBlockDifficulty)
+                        if (calculCompute > 1 && calculCompute <= maxRange)
                         {
 
 
@@ -1248,7 +1248,7 @@ namespace Xiropht_Solo_Miner
                                 calculCompute = (float)Math.Round(calculCompute, 0);
                             }
 
-                            if (calculCompute > 1 && calculCompute <= currentBlockDifficulty)
+                            if (calculCompute > 1 && calculCompute <= maxRange)
                             {
 
 
@@ -1379,7 +1379,7 @@ namespace Xiropht_Solo_Miner
                          float accuratePourcent = 0;
                          if (TotalHashrate != 0 && TotalCalculation != 0)
                          {
-                             accuratePourcent = (TotalHashrate / TotalCalculation) * 100;
+                             accuratePourcent = ((float)TotalHashrate / (float)TotalCalculation) * 100;
                              accuratePourcent = (float)Math.Round(accuratePourcent, 2);
                          }
                          for (int i = 0; i < TotalMiningRound.Count; i++)
