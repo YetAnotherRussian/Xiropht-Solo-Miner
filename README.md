@@ -17,7 +17,7 @@ Linux:
 
 -> You can also make your own linux binary for don't have to install mono:
 
-- mkbundle Xiropht-Solo-Miner.exe -o Xiropht-Solo-Miner Xiropht-Connector-All.dll NCalc.dll Antlr3.Runtime.dll --deps -z --static
+- mkbundle Xiropht-Solo-Miner.exe -o Xiropht-Solo-Miner Xiropht-Connector-All.dll --deps -z --static
 
 - ./Xiropht-Solo-Miner
 
