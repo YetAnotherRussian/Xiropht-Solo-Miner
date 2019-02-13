@@ -1009,6 +1009,7 @@ namespace Xiropht_Solo_Miner
 
             var currentBlockDifficulty = float.Parse(CurrentBlockDifficulty);
 
+            var currentBlockDifficultyLength = ("" + currentBlockDifficulty).Length;
 
             StringBuilder numberBuilder = new StringBuilder();
 
@@ -1023,7 +1024,7 @@ namespace Xiropht_Solo_Miner
 
 
                 string firstNombre = "0";
-                while (float.Parse(firstNombre) > maxRange || float.Parse(firstNombre) <= 1)
+                while (float.Parse(firstNombre) > maxRange || float.Parse(firstNombre) <= 1 || firstNombre.Length >= currentBlockDifficultyLength)
                 {
                     var randomJobSize = ("" + ClassUtils.GetRandomBetweenJob(minRange, maxRange)).Length;
 
@@ -1065,10 +1066,10 @@ namespace Xiropht_Solo_Miner
                 string secondNombre = "0";
 
 
-                while (float.Parse(secondNombre) > maxRange || float.Parse(secondNombre) <= 1 ) 
+                while (float.Parse(secondNombre) > maxRange || float.Parse(secondNombre) <= 1) 
                 {
-                    var randomJobSize = ("" + ClassUtils.GetRandomBetweenJob(minRange, maxRange)).Length;
-                    int randomSize = ClassUtils.GetRandomBetween(1, randomJobSize);
+                    int differenceSize = currentBlockDifficultyLength - firstNombre.Length;
+                    int randomSize = differenceSize;
                     int counter = 0;
                     while (counter < randomSize)
                     {
@@ -1105,7 +1106,7 @@ namespace Xiropht_Solo_Miner
 
                 float computeNumberSize = firstNombre.Length + secondNombre.Length;
 
-                if (computeNumberSize <= ("" + currentBlockDifficulty).Length)
+                if (computeNumberSize == ("" + currentBlockDifficulty).Length)
                 {
                     for (int k = 0; k < randomOperatorCalculation.Length; k++)
                     {
