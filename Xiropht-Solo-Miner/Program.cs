@@ -1069,7 +1069,7 @@ namespace Xiropht_Solo_Miner
                 while (float.Parse(secondNombre) > maxRange || float.Parse(secondNombre) <= 1) 
                 {
                     int differenceSize = currentBlockDifficultyLength - firstNombre.Length;
-                    int randomSize = differenceSize;
+                    int randomSize = ClassUtils.GetRandomBetween(1, differenceSize);
                     int counter = 0;
                     while (counter < randomSize)
                     {
@@ -1106,7 +1106,7 @@ namespace Xiropht_Solo_Miner
 
                 float computeNumberSize = firstNombre.Length + secondNombre.Length;
 
-                if (computeNumberSize == ("" + currentBlockDifficulty).Length)
+                if (computeNumberSize <= ("" + currentBlockDifficulty).Length)
                 {
                     for (int k = 0; k < randomOperatorCalculation.Length; k++)
                     {
