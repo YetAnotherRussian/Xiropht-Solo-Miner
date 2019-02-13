@@ -25,14 +25,13 @@ The config.ini file of the miner is initialized after the first running.
 
 This release as been compiled into Debug Mode, because we are currently in private test.
 
-Hashrate test:
+Hashrate test [Updated 13/02/2019]:
 
--> Raspberry PI 3 (On Raspberian OS): 1554C/s | 903H/s | Accurate Rate 58,11% Cache Enabled.
+-> Raspberry PI 3 (On Raspberian OS): 1238C/s | 1157H/s | Accurate Rate 93.46%
 
--> Ryzen 7 2700x No OC (On Windows 10): 4015C/s | 2590 H/s | Accurate Rate 64,51% Cache Enabled.
+-> Ryzen 7 2700x No OC (On Windows 10): 4521 C/s | 4187 H/s | AccuraTe Rate 92,61%
 
--> Celeron G3930 (On Windows 10): 2150C/s | 1200H/s | Accurate Rate 55,81% Cache Enabled.
+-> Celeron G3930 (On Windows 10): 2150C/s | 1890H/s | Accurate Rate 91,25%
 
 For more informations about how work the Xiropht Mining System, please check out the Wiki: https://github.com/XIROPHT/Xiropht-Solo-Miner/wiki
 
-**External library used: NCalc libary is not used anymore !**
