@@ -26,7 +26,6 @@ namespace Xiropht_Solo_Miner
         public static int TotalBlockAccepted;
         public static int TotalBlockRefused;
         private const int HashrateIntervalCalculation = 10;
-        public static bool SaveShareStatus;
 
         /// <summary>
         /// Current block information for mining it.
@@ -178,13 +177,6 @@ namespace Xiropht_Solo_Miner
                     {
                         MiningPositionDifficulty = int.Parse(line.Replace("MINING_POSITION_DIFFICULTY=", ""));
                     }
-                    else if (line.Contains("CACHE_CALCULATION="))
-                    {
-                        if (line.Replace("CACHE_CALCULATION=", "") == "Y" || line.Replace("CACHE_CALCULATION=", "") == "y")
-                        {
-                            SaveShareStatus = true;
-                        }
-                    }
                 }
                 ThreadMining = new Thread[TotalThreadMining];
 
@@ -289,12 +281,6 @@ namespace Xiropht_Solo_Miner
                     ThreadMiningPriority = 2;
                 }
 
-                Console.WriteLine("Do you want enable cache calculation ? [Y/N]");
-                choose = Console.ReadLine();
-                if (choose == "Y" || choose == "y")
-                {
-                    SaveShareStatus = true;
-                }
 
                 WriteMinerConfig();
                 
@@ -364,14 +350,6 @@ namespace Xiropht_Solo_Miner
                 writeConfig.WriteLine("MINING_DIFFICULTY=0");
                 writeConfig.WriteLine("MINING_POSITION_DIFFICULTY=0");
 
-            }
-            if (SaveShareStatus)
-            {
-                writeConfig.WriteLine("CACHE_CALCULATION=Y");
-            }
-            else
-            {
-                writeConfig.WriteLine("CACHE_CALCULATION=N");
             }
             writeConfig.Close();
         }
@@ -1066,10 +1044,10 @@ namespace Xiropht_Solo_Miner
                 string secondNombre = "0";
 
 
-                while (float.Parse(secondNombre) > maxRange || float.Parse(secondNombre) <= 1) 
+                while (float.Parse(secondNombre) > maxRange || float.Parse(secondNombre) <= 1)
                 {
-                    int differenceSize = currentBlockDifficultyLength - firstNombre.Length;
-                    int randomSize = ClassUtils.GetRandomBetween(1, differenceSize);
+                    var randomJobSize = ("" + ClassUtils.GetRandomBetweenJob(minRange, maxRange)).Length;
+                    int randomSize = ClassUtils.GetRandomBetween(1, randomJobSize);
                     int counter = 0;
                     while (counter < randomSize)
                     {
@@ -1106,7 +1084,7 @@ namespace Xiropht_Solo_Miner
 
                 float computeNumberSize = firstNombre.Length + secondNombre.Length;
 
-                if (computeNumberSize <= ("" + currentBlockDifficulty).Length)
+                if (computeNumberSize >= currentBlockDifficultyLength - 1 && computeNumberSize <= currentBlockDifficultyLength)
                 {
                     for (int k = 0; k < randomOperatorCalculation.Length; k++)
                     {
@@ -1361,7 +1339,7 @@ namespace Xiropht_Solo_Miner
                                  totalRound += TotalMiningRound[i];
                                  if (counterTime >= HashrateIntervalCalculation && CanMining)
                                  {
-                                     ClassConsole.WriteLine("Calculation Speed Thread " + i + " : " + (TotalMiningRound[i] / HashrateIntervalCalculation) + " C/s", 4);
+                                     ClassConsole.WriteLine("Calculation Speed Thread " + i + " : " + (TotalMiningRound[i]) + " C/s", 4);
                                  }
                              }
                          }
@@ -1373,14 +1351,14 @@ namespace Xiropht_Solo_Miner
                                  totalRoundHashrate += TotalMiningHashrateRound[i];
                                  if (counterTime >= HashrateIntervalCalculation && CanMining)
                                  {
-                                     ClassConsole.WriteLine("Encryption Speed Thread " + i + " : " + (TotalMiningHashrateRound[i] / HashrateIntervalCalculation) + " H/s", 4);
+                                     ClassConsole.WriteLine("Encryption Speed Thread " + i + " : " + (TotalMiningHashrateRound[i]) + " H/s", 4);
                                  }
                              }
                          }
 
 
-                         TotalCalculation = (totalRound / HashrateIntervalCalculation);
-                         TotalHashrate = (totalRoundHashrate / HashrateIntervalCalculation);
+                         TotalCalculation = (totalRound);
+                         TotalHashrate = (totalRoundHashrate);
                          float accuratePourcent = 0;
                          if (TotalHashrate != 0 && TotalCalculation != 0)
                          {
@@ -1435,7 +1413,7 @@ namespace Xiropht_Solo_Miner
                      catch
                      {
                      }
-                     Thread.Sleep(HashrateIntervalCalculation * 1000); // Each 10 seconds
+                     Thread.Sleep(1000); // Each 10 seconds
                 }
              }).Start();
         }

@@ -125,9 +125,8 @@ namespace Xiropht_Solo_Miner
                           aes.CreateEncryptor(), CryptoStreamMode.Write))
                         {
                             cs.Write(textByte, 0, textByte.Length);
-                            cs.FlushFinalBlock();
-                            return BitConverter.ToString(ms.ToArray());
                         }
+                        return BitConverter.ToString(ms.ToArray());
                     }
                 }
             }
@@ -150,9 +149,8 @@ namespace Xiropht_Solo_Miner
                           aes.CreateDecryptor(), CryptoStreamMode.Write))
                         {
                             cs.Write(textByte, 0, textByte.Length);
-                            cs.Close();
-                            return BitConverter.ToString(ms.ToArray());
                         }
+                        return BitConverter.ToString(ms.ToArray());
                     }
                 }
             }
@@ -214,25 +212,26 @@ namespace Xiropht_Solo_Miner
             using (PasswordDeriveBytes password = new PasswordDeriveBytes(passPhrase, Encoding.ASCII.GetBytes(ClassUtils.StringToHex(passPhrase.Substring(0, 8)))))
             {
                 byte[] keyBytes = password.GetBytes(keysize / 8);
-                using (var symmetricKey = new AesCryptoServiceProvider() { Mode = CipherMode.CFB })
+                byte[] plainTextBytes = Encoding.ASCII.GetBytes(plainText);
+                using (var symmetricKey = new RijndaelManaged() { Mode = CipherMode.CFB })
                 {
                     byte[] initVectorBytes = Encoding.ASCII.GetBytes(InitVector);
                     symmetricKey.BlockSize = 128;
                     symmetricKey.KeySize = keysize;
                     symmetricKey.Padding = PaddingMode.PKCS7;
-                    ICryptoTransform encryptor = symmetricKey.CreateEncryptor(keyBytes, initVectorBytes);
-                    using (MemoryStream memoryStream = new MemoryStream())
+                    using (ICryptoTransform encryptor = symmetricKey.CreateEncryptor(keyBytes, initVectorBytes))
                     {
-                        using (CryptoStream cryptoStream = new CryptoStream(memoryStream, encryptor, CryptoStreamMode.Write))
+                        using (MemoryStream memoryStream = new MemoryStream())
                         {
-                            byte[] plainTextBytes = Encoding.ASCII.GetBytes(plainText);
-                            cryptoStream.Write(plainTextBytes, 0, plainTextBytes.Length);
-                            cryptoStream.FlushFinalBlock();
-                            byte[] cipherTextBytes = memoryStream.ToArray();
-                            memoryStream.Close();
-                            cryptoStream.Close();
-
-                            return Convert.ToBase64String(cipherTextBytes);
+                            using (CryptoStream cryptoStream = new CryptoStream(memoryStream, encryptor, CryptoStreamMode.Write))
+                            {
+                                cryptoStream.Write(plainTextBytes, 0, plainTextBytes.Length);
+                                cryptoStream.FlushFinalBlock();
+                                memoryStream.Close();
+                                cryptoStream.Close();
+                                byte[] cipherTextBytes = memoryStream.ToArray();
+                                return Convert.ToBase64String(cipherTextBytes);
+                            }
                         }
                     }
                 }
@@ -251,24 +250,26 @@ namespace Xiropht_Solo_Miner
             using (PasswordDeriveBytes password = new PasswordDeriveBytes(passPhrase, Encoding.ASCII.GetBytes(ClassUtils.StringToHex(passPhrase.Substring(0, 8)))))
             {
                 byte[] keyBytes = password.GetBytes(keysize / 8);
-                using (var symmetricKey = new AesCryptoServiceProvider() { Mode = CipherMode.CFB })
+                using (var symmetricKey = new RijndaelManaged() { Mode = CipherMode.CFB })
                 {
                     byte[] initVectorBytes = Encoding.ASCII.GetBytes(InitVector);
                     byte[] cipherTextBytes = Convert.FromBase64String(cipherText);
                     symmetricKey.BlockSize = 128;
                     symmetricKey.KeySize = keysize;
                     symmetricKey.Padding = PaddingMode.PKCS7;
-                    ICryptoTransform decryptor = symmetricKey.CreateDecryptor(keyBytes, initVectorBytes);
-                    using (MemoryStream memoryStream = new MemoryStream(cipherTextBytes))
+                    using (ICryptoTransform decryptor = symmetricKey.CreateDecryptor(keyBytes, initVectorBytes))
                     {
-                        using (CryptoStream cryptoStream = new CryptoStream(memoryStream, decryptor, CryptoStreamMode.Read))
+                        byte[] plainTextBytes = new byte[cipherTextBytes.Length];
+                        int decryptedByteCount = 0;
+                        using (MemoryStream memoryStream = new MemoryStream(cipherTextBytes))
                         {
-                            byte[] plainTextBytes = new byte[cipherTextBytes.Length];
-                            int decryptedByteCount = cryptoStream.Read(plainTextBytes, 0, plainTextBytes.Length);
-                            memoryStream.Close();
-                            cryptoStream.FlushFinalBlock();
-                            cryptoStream.Close();
-                            return Encoding.ASCII.GetString(plainTextBytes, 0, decryptedByteCount);
+                            using (CryptoStream cryptoStream = new CryptoStream(memoryStream, decryptor, CryptoStreamMode.Read))
+                            {
+                                decryptedByteCount = cryptoStream.Read(plainTextBytes, 0, plainTextBytes.Length);
+                                memoryStream.Close();
+                                cryptoStream.Close();
+                                return Encoding.ASCII.GetString(plainTextBytes, 0, decryptedByteCount);
+                            }
                         }
                     }
                 }
