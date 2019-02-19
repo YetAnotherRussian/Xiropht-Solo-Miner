@@ -33,7 +33,7 @@ Hashrate test [Updated 13/02/2019]:
 
 -> Raspberry PI 3 (On Raspberian OS): 1238C/s | 1157H/s | Accurate Rate 93.46%
 
--> Ryzen 7 2700x No OC (On Windows 10): 4521 C/s | 4187 H/s | AccuraTe Rate 92,61%
+-> Ryzen 7 2700x No OC (On Windows 10): 4521 C/s | 4187 H/s | Accurate Rate 92,61%
 
 -> Celeron G3930 (On Windows 10): 2150C/s | 1890H/s | Accurate Rate 91,25%
 
