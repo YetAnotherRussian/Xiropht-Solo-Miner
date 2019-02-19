@@ -5,7 +5,7 @@
 
 <h2>Windows:</h2>
 
--> This miner require Netframework 4.6 and the Xiropht Connector All library: https://github.com/XIROPHT/Xiropht-Connector-All
+-> This miner require Netframework 4.6.1 minimum and the Xiropht Connector All library: https://github.com/XIROPHT/Xiropht-Connector-All
 
 <h2>Linux:</h2>
 
