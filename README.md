@@ -1,5 +1,5 @@
 # Xiropht-Solo-Miner
-<h1>Official Xiropht Solo Miner, this is the first stable version.</h1>
+<h2>Official Xiropht Solo Miner.</h2>
 
 **In production, we suggest to compile in Release Mode for disable log files and debug mode.**
 
