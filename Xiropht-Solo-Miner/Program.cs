@@ -1132,7 +1132,7 @@ namespace Xiropht_Solo_Miner
                                 {
                                     encryptedShare = ClassAlgo.GetEncryptedResult(CurrentBlockAlgorithm, encryptedShare, CurrentBlockKey, roundSize, Encoding.UTF8.GetBytes(roundKey));
                                 }
-
+                                encryptedShare = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Xor, encryptedShare, "" + keyXorMethod, roundSize, null);
                                 encryptedShare = ClassAlgo.GetEncryptedResult(CurrentBlockAlgorithm, encryptedShare, CurrentBlockKey, roundSize, Encoding.UTF8.GetBytes(roundKey));
 
                                 encryptedShare = ClassUtils.GenerateSHA512(encryptedShare);
@@ -1244,6 +1244,7 @@ namespace Xiropht_Solo_Miner
                                         encryptedShare = ClassAlgo.GetEncryptedResult(CurrentBlockAlgorithm, encryptedShare, CurrentBlockKey, roundSize, Encoding.UTF8.GetBytes(roundKey));
                                     }
 
+                                    encryptedShare = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Xor, encryptedShare, "" + keyXorMethod, roundSize, null);
                                     encryptedShare = ClassAlgo.GetEncryptedResult(CurrentBlockAlgorithm, encryptedShare, CurrentBlockKey, roundSize, Encoding.UTF8.GetBytes(roundKey));
 
                                     encryptedShare = ClassUtils.GenerateSHA512(encryptedShare);
