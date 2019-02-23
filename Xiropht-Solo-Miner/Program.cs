@@ -59,6 +59,7 @@ namespace Xiropht_Solo_Miner
         private const int TimeoutPacketReceived = 60; // Max 60 seconds.
         private static int PacketSpeedSend;
 
+
         /// <summary>
         /// For Proxy.
         /// </summary>
@@ -455,6 +456,14 @@ namespace Xiropht_Solo_Miner
                 Thread.Sleep(5000);
                 while (true)
                 {
+                    if (UseProxy)
+                    {
+                        if (LastPacketReceived + TimeoutPacketReceived < DateTimeOffset.Now.ToUnixTimeSeconds())
+                        {
+                            ClassConsole.WriteLine("Network connection timeout.", 3);
+                            ObjectSeedNodeNetwork?.DisconnectToSeed();
+                        }
+                    }
                     if (!IsConnected || !LoginAccepted || !ObjectSeedNodeNetwork.GetStatusConnectToSeed())
                     {
                         ClassConsole.WriteLine("Network connection lost or aborted, retry to connect..", 3);
@@ -888,7 +897,7 @@ namespace Xiropht_Solo_Miner
                             DisconnectNetwork();
                             break;
                         }
-                        await Task.Delay(1000);
+                       Thread.Sleep(1000);
                         if (ListeMiningMethodContent.Count > 0)
                         {
                             if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskCurrentBlockMining, CertificateConnection, false, true))
@@ -897,24 +906,35 @@ namespace Xiropht_Solo_Miner
                                 break;
                             }
                         }
-
+                        Thread.Sleep(1000);
                     }
                 }
                 else
                 {
-                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskListBlockMethod, string.Empty, false, false))
-                    {
-                        DisconnectNetwork();
-                    }
-                    await Task.Delay(1000);
-                    if (ListeMiningMethodContent.Count > 0)
-                    {
-                        if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskCurrentBlockMining, string.Empty, false, false))
+                    
+                        if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskListBlockMethod, string.Empty, false, false))
                         {
                             DisconnectNetwork();
                         }
+                        Thread.Sleep(1000);
+                    
+                        if (ListeMiningMethodContent.Count > 0)
+                        {
+                            if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskCurrentBlockMining, string.Empty, false, false))
+                            {
+                                DisconnectNetwork();
+                            }
+                        }
+                        Thread.Sleep(1000);
+                    while (IsConnected)
+                    {
+                        if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskListBlockMethod, string.Empty, false, false))
+                        {
+                            DisconnectNetwork();
+                        }
+                        Thread.Sleep(1000);
                     }
-                    await Task.Delay(1000);
+
                 }
             }).Start();
         }
