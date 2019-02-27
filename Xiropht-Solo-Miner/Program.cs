@@ -463,8 +463,15 @@ namespace Xiropht_Solo_Miner
                             ClassConsole.WriteLine("Network connection timeout.", 3);
                             ObjectSeedNodeNetwork?.DisconnectToSeed();
                         }
+                        else
+                        {
+                            if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskListBlockMethod, string.Empty, false, false))
+                            {
+                                DisconnectNetwork();
+                            }
+                        }
                     }
-                    if (!IsConnected || !LoginAccepted || !ObjectSeedNodeNetwork.GetStatusConnectToSeed())
+                    if (!IsConnected || !LoginAccepted || !ObjectSeedNodeNetwork.ReturnStatus())
                     {
                         ClassConsole.WriteLine("Network connection lost or aborted, retry to connect..", 3);
                         await StopMiningAsync();
@@ -867,8 +874,13 @@ namespace Xiropht_Solo_Miner
                                 ClassConsole.WriteLine("Invalid share.", 3);
                                 TotalShareInvalid++;
                                 break;
-
                         }
+
+                        if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskCurrentBlockMining, string.Empty, false, false))
+                        {
+                            DisconnectNetwork();
+                        }
+                        
                         break;
                 }
             }
@@ -897,7 +909,7 @@ namespace Xiropht_Solo_Miner
                             DisconnectNetwork();
                             break;
                         }
-                       Thread.Sleep(1000);
+                        Thread.Sleep(1000);
                         if (ListeMiningMethodContent.Count > 0)
                         {
                             if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskCurrentBlockMining, CertificateConnection, false, true))
@@ -911,30 +923,21 @@ namespace Xiropht_Solo_Miner
                 }
                 else
                 {
-                    
-                        if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskListBlockMethod, string.Empty, false, false))
-                        {
-                            DisconnectNetwork();
-                        }
-                        Thread.Sleep(1000);
-                    
-                        if (ListeMiningMethodContent.Count > 0)
-                        {
-                            if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskCurrentBlockMining, string.Empty, false, false))
-                            {
-                                DisconnectNetwork();
-                            }
-                        }
-                        Thread.Sleep(1000);
-                    while (IsConnected)
-                    {
-                        if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskListBlockMethod, string.Empty, false, false))
-                        {
-                            DisconnectNetwork();
-                        }
-                        Thread.Sleep(1000);
-                    }
 
+                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskListBlockMethod, string.Empty, false, false))
+                    {
+                        DisconnectNetwork();
+                    }
+                    Thread.Sleep(1000);
+
+                    if (ListeMiningMethodContent.Count > 0)
+                    {
+                        if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskCurrentBlockMining, string.Empty, false, false))
+                        {
+                            DisconnectNetwork();
+                        }
+                    }
+                    Thread.Sleep(1000);
                 }
             }).Start();
         }
