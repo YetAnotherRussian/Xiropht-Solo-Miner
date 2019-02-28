@@ -234,11 +234,11 @@ namespace Xiropht_Solo_Miner
                     {
                         Console.WriteLine("This is not a port number, please try again: ");
                     }
-                    Console.WriteLine("Do you want select a mining range difficulty? [Y/N]");
+                    Console.WriteLine("Do you want select a mining range pourcentage of difficulty? [Y/N]");
                     choose = Console.ReadLine();
                     if (choose == "Y" || choose == "y")
                     {
-                        Console.WriteLine("Select a mining range difficulty between 1% to 100%, select your range: ");
+                        Console.WriteLine("Select the start pourcentage range of difficulty [0 to 99]: ");
                         while (!int.TryParse(Console.ReadLine(), out MiningPourcentDifficultyEnd))
                         {
                             Console.WriteLine("This is not a number, please try again: ");
@@ -251,14 +251,14 @@ namespace Xiropht_Solo_Miner
                         {
                             MiningPourcentDifficultyEnd = 100;
                         }
-                        Console.WriteLine("Select a mining position difficulty for your difficulty, Min: 0, Max: 99");
+                        Console.WriteLine("Select the end pourcentage range of difficulty [0 to 100]:");
                         while(!int.TryParse(Console.ReadLine(), out MiningPourcentDifficultyStart))
                         {
                             Console.WriteLine("This is not a number, please try again: ");
                         }
                         if (MiningPourcentDifficultyStart > 99)
                         {
-                            MiningPourcentDifficultyStart = 0;
+                            MiningPourcentDifficultyStart = 99;
                         }
                         if (MiningPourcentDifficultyStart < 0)
                         {

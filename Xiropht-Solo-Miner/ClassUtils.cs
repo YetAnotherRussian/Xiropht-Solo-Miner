@@ -16,21 +16,22 @@ namespace Xiropht_Solo_Miner
         /// <returns></returns>
         public static int GetRandomBetween(int minimumValue, int maximumValue)
         {
-            RNGCryptoServiceProvider Generator = new RNGCryptoServiceProvider();
+            using (RNGCryptoServiceProvider Generator = new RNGCryptoServiceProvider())
+            {
+                var randomNumber = new byte[sizeof(int)];
 
-            var randomNumber = new byte[sizeof(int)];
+                Generator.GetBytes(randomNumber);
 
-            Generator.GetBytes(randomNumber);
+                var asciiValueOfRandomCharacter = Convert.ToDouble(randomNumber[0]);
 
-            var asciiValueOfRandomCharacter = Convert.ToDouble(randomNumber[0]);
+                var multiplier = Math.Max(0, asciiValueOfRandomCharacter / 255d - 0.00000000001d);
 
-            var multiplier = Math.Max(0, asciiValueOfRandomCharacter / 255d - 0.00000000001d);
+                var range = maximumValue - minimumValue + 1;
 
-            var range = maximumValue - minimumValue + 1;
+                var randomValueInRange = Math.Floor(multiplier * range);
 
-            var randomValueInRange = Math.Floor(multiplier * range);
-
-            return (int)(minimumValue + randomValueInRange);
+                return (int)(minimumValue + randomValueInRange);
+            }
         }
 
         /// <summary>
@@ -41,20 +42,21 @@ namespace Xiropht_Solo_Miner
         /// <returns></returns>
         public static float GetRandomBetweenJob(float minimumValue, float maximumValue)
         {
-            RNGCryptoServiceProvider Generator = new RNGCryptoServiceProvider();
+            using (RNGCryptoServiceProvider Generator = new RNGCryptoServiceProvider())
+            {
+                var randomNumber = new byte[sizeof(float)];
 
-            var randomNumber = new byte[sizeof(float)];
+                Generator.GetBytes(randomNumber);
 
-            Generator.GetBytes(randomNumber);
+                var asciiValueOfRandomCharacter = (float)Convert.ToDouble(randomNumber[0]);
 
-            var asciiValueOfRandomCharacter = (float)Convert.ToDouble(randomNumber[0]);
+                var multiplier = (float)Math.Max(0, asciiValueOfRandomCharacter / 255d - 0.00000000001d);
 
-            var multiplier = (float)Math.Max(0, asciiValueOfRandomCharacter / 255d - 0.00000000001d);
+                var range = maximumValue - minimumValue + 1;
 
-            var range = maximumValue - minimumValue + 1;
-
-            var randomValueInRange = (float)Math.Floor(multiplier * range);
-            return (minimumValue + randomValueInRange);
+                var randomValueInRange = (float)Math.Floor(multiplier * range);
+                return (minimumValue + randomValueInRange);
+            }
         }
 
         /// <summary>
@@ -125,7 +127,5 @@ namespace Xiropht_Solo_Miner
                 return hashedInputStringBuilder.ToString();
             }
         }
-
-
     }
 }
