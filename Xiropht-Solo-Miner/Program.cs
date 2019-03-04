@@ -302,6 +302,8 @@ namespace Xiropht_Solo_Miner
             ClassConsole.WriteLine("Command Line: h -> show hashrate.", 4);
             ClassConsole.WriteLine("Command Line: d -> show current difficulty.", 4);
 
+            Console.CancelKeyPress += Console_CancelKeyPress;
+
             var threadCommand = new Thread(delegate ()
             {
                 string command = string.Empty;
@@ -316,6 +318,13 @@ namespace Xiropht_Solo_Miner
             });
             threadCommand.Start();
 
+        }
+
+        private static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        {
+            e.Cancel = true;
+            Console.WriteLine("Closing miner.");
+            Process.GetCurrentProcess().Kill();
         }
 
         /// <summary>
@@ -960,6 +969,8 @@ namespace Xiropht_Solo_Miner
             await Task.Delay(1000);
         }
 
+
+
         /// <summary>
         /// Start mining.
         /// </summary>
@@ -1354,7 +1365,7 @@ namespace Xiropht_Solo_Miner
         private static void CalculateHashrate()
         {
 
-            new Thread(() =>
+            new Thread(async () =>
              {
                  var counterTime = 0;
                  while (true)
@@ -1439,13 +1450,20 @@ namespace Xiropht_Solo_Miner
                              {
                                  counterTime = 0;
                              }
+                             if (UseProxy) // Share hashrate information to the proxy solo miner.
+                             {
+                                 if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ShareHashrate+"|"+TotalHashrate, string.Empty, false, false))
+                                 {
+                                     DisconnectNetwork();
+                                 }
+                             }
                          }
 
                      }
                      catch
                      {
                      }
-                     Thread.Sleep(1000); // Each 10 seconds
+                     Thread.Sleep(1000); // Each 1 seconds
                 }
              }).Start();
         }
