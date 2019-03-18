@@ -177,7 +177,7 @@ namespace Xiropht_Solo_Miner
         {
             string number = "0";
             StringBuilder numberBuilder = new StringBuilder();
-            while (float.Parse(number) > maxRange || float.Parse(number) <= 1 || number.Length >= currentBlockDifficultyLength)
+            while (float.Parse(number) > maxRange || float.Parse(number) <= 1 || number.Length > currentBlockDifficultyLength)
             {
                 var randomJobSize = ("" + GetRandomBetweenJob(minRange, maxRange)).Length;
 
