@@ -7,6 +7,9 @@ namespace Xiropht_Solo_Miner
     public class ClassUtils
     {
 
+        public static string[] randomOperatorCalculation = new[] { "+", "*", "%", "-", "/" };
+
+        private static string[] randomNumberCalculation = new[] { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
         /// <summary>
         ///     Get a random number in integer size.
@@ -126,6 +129,91 @@ namespace Xiropht_Solo_Miner
                     hashedInputStringBuilder.Append(b.ToString("X2"));
                 return hashedInputStringBuilder.ToString();
             }
+        }
+
+        /// <summary>
+        /// Return result from a math calculation.
+        /// </summary>
+        /// <param name="firstNumber"></param>
+        /// <param name="operatorCalculation"></param>
+        /// <param name="secondNumber"></param>
+        /// <returns></returns>
+        public static float ComputeCalculation(string firstNumber, string operatorCalculation, string secondNumber)
+        {
+            float calculCompute = 0;
+            if (operatorCalculation.Contains("+"))
+            {
+                calculCompute = float.Parse(firstNumber) + float.Parse(secondNumber);
+                calculCompute = (float)Math.Round(calculCompute, 0);
+            }
+            else if (operatorCalculation.Contains("*"))
+            {
+                calculCompute = float.Parse(firstNumber) * float.Parse(secondNumber);
+                calculCompute = (float)Math.Round(calculCompute, 0);
+            }
+            else if (operatorCalculation.Contains("%"))
+            {
+                calculCompute = float.Parse(firstNumber) % float.Parse(secondNumber);
+                calculCompute = (float)Math.Round(calculCompute, 0);
+            }
+            else if (operatorCalculation.Contains("-"))
+            {
+                calculCompute = float.Parse(firstNumber) - float.Parse(secondNumber);
+                calculCompute = (float)Math.Round(calculCompute, 0);
+            }
+            else if (operatorCalculation.Contains("/"))
+            {
+                calculCompute = float.Parse(firstNumber) / float.Parse(secondNumber);
+                calculCompute = (float)Math.Round(calculCompute, 0);
+            }
+            return calculCompute;
+        }
+
+        /// <summary>
+        /// Return a number for complete a math calculation text.
+        /// </summary>
+        /// <returns></returns>
+        public static string GenerateNumberMathCalculation(float minRange, float maxRange, int currentBlockDifficultyLength)
+        {
+            string number = "0";
+            StringBuilder numberBuilder = new StringBuilder();
+            while (float.Parse(number) > maxRange || float.Parse(number) <= 1 || number.Length >= currentBlockDifficultyLength)
+            {
+                var randomJobSize = ("" + GetRandomBetweenJob(minRange, maxRange)).Length;
+
+                int randomSize = GetRandomBetween(1, randomJobSize);
+                int counter = 0;
+                while (counter < randomSize)
+                {
+                    if (randomSize > 1)
+                    {
+                        var numberRandom = randomNumberCalculation[GetRandomBetween(0, randomNumberCalculation.Length - 1)];
+                        if (counter == 0)
+                        {
+                            while (numberRandom == "0")
+                            {
+                                numberRandom = randomNumberCalculation[GetRandomBetween(0, randomNumberCalculation.Length - 1)];
+                            }
+                            numberBuilder.Append(numberRandom);
+                        }
+                        else
+                        {
+                            numberBuilder.Append(numberRandom);
+                        }
+                    }
+                    else
+                    {
+                        numberBuilder.Append(
+                                       randomNumberCalculation[
+                                           GetRandomBetween(0, randomNumberCalculation.Length - 1)]);
+                    }
+                    counter++;
+                }
+                number = numberBuilder.ToString();
+                numberBuilder.Clear();
+                return number;
+            }
+            return number;
         }
     }
 }

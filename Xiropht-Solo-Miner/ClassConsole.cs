@@ -38,7 +38,7 @@ namespace Xiropht_Solo_Miner
         /// <param name="command"></param>
         public static void CommandLine(string command)
         {
-            switch (command)
+            switch (command.ToLower())
             {
                 case "h":
                     float accuratePourcent = 0;
@@ -65,6 +65,9 @@ namespace Xiropht_Solo_Miner
                     break;
                 case "d":
                     WriteLine("Current Block: " + Program.CurrentBlockId + " Difficulty: " + Program.CurrentBlockDifficulty);
+                    break;
+                case "r":
+                    WriteLine("Current Range: " + Program.CurrentBlockJob.Replace(";", "|"));
                     break;
             }
         }

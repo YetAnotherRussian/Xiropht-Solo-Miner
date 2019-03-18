@@ -785,7 +785,7 @@ namespace Xiropht_Solo_Miner
                                     {
                                         int i1 = i + 1;
                                         int iThread = i;
-                                        ThreadMining[i] = new Thread(delegate ()
+                                        ThreadMining[i] = new Thread(async delegate ()
                                         {
 
                                             if (ShareJobRange)
@@ -798,24 +798,24 @@ namespace Xiropht_Solo_Miner
                                                         var minRangeTmp = previousProxyMaxRange;
                                                         var maxRangeTmp = minRangeTmp + incrementProxyRange;
                                                         previousProxyMaxRange = maxRangeTmp;
-                                                        StartMiningAsync(iThread, (float)Math.Round(minRangeTmp, 0), (float)(Math.Round(maxRangeTmp, 0)));
+                                                        await StartMiningAsync(iThread, (float)Math.Round(minRangeTmp, 0), (float)(Math.Round(maxRangeTmp, 0)));
                                                     }
                                                     else
                                                     {
-                                                        StartMiningAsync(iThread, (float)Math.Round((maxRange / TotalThreadMining) * (i1 - 1), 0), (float)(Math.Round(((maxRange / TotalThreadMining) * i1), 0)));
+                                                        await StartMiningAsync(iThread, (float)Math.Round((maxRange / TotalThreadMining) * (i1 - 1), 0), (float)(Math.Round(((maxRange / TotalThreadMining) * i1), 0)));
 
                                                     }
 
                                                 }
                                                 else
                                                 {
-                                                    StartMiningAsync(iThread, (float)Math.Round((maxRange / TotalThreadMining) * (i1 - 1), 0), (float)(Math.Round(((maxRange / TotalThreadMining) * i1), 0)));
+                                                    await StartMiningAsync(iThread, (float)Math.Round((maxRange / TotalThreadMining) * (i1 - 1), 0), (float)(Math.Round(((maxRange / TotalThreadMining) * i1), 0)));
                                                 }
 
                                             }
                                             else
                                             {
-                                                StartMiningAsync(iThread, minRange, maxRange);
+                                                await StartMiningAsync(iThread, minRange, maxRange);
                                             }
                                         });
                                         switch (ThreadMiningPriority)
@@ -977,15 +977,13 @@ namespace Xiropht_Solo_Miner
         /// <param name="idThread"></param>
         /// <param name="minRange"></param>
         /// <param name="maxRange"></param>
-        private static void StartMiningAsync(int idThread, float minRange, float maxRange)
+        private static async Task StartMiningAsync(int idThread, float minRange, float maxRange)
         {
             if (minRange <= 1)
             {
                 minRange = 2;
             }
-            var randomOperatorCalculation = new[] { "+", "*", "%", "-", "/" };
 
-            var randomNumberCalculation = new[] { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
             int idMethod = 0;
             if (ListeMiningMethodName.Count >= 1)
             {
@@ -1031,7 +1029,6 @@ namespace Xiropht_Solo_Miner
 
             var currentBlockDifficultyLength = ("" + currentBlockDifficulty).Length;
 
-            StringBuilder numberBuilder = new StringBuilder();
 
             while (CanMining)
             {
@@ -1040,130 +1037,33 @@ namespace Xiropht_Solo_Miner
                 {
                     currentBlockId = CurrentBlockId;
                     currentBlockTimestamp = CurrentBlockTimestampCreate;
+                    currentBlockDifficulty = float.Parse(CurrentBlockDifficulty);
+                    currentBlockDifficultyLength = ("" + currentBlockDifficulty).Length;
                 }
 
 
-                string firstNombre = "0";
-                while (float.Parse(firstNombre) > maxRange || float.Parse(firstNombre) <= 1 || firstNombre.Length >= currentBlockDifficultyLength)
-                {
-                    var randomJobSize = ("" + ClassUtils.GetRandomBetweenJob(minRange, maxRange)).Length;
-
-                    int randomSize = ClassUtils.GetRandomBetween(1, randomJobSize);
-                    int counter = 0;
-                    while (counter < randomSize)
-                    {
-                        if (randomSize > 1)
-                        {
-                            var numberRandom = randomNumberCalculation[
-                                ClassUtils.GetRandomBetween(0, randomNumberCalculation.Length - 1)];
-                            if (counter == 0)
-                            {
-                                while (numberRandom == "0")
-                                {
-                                    numberRandom = randomNumberCalculation[
-                                        ClassUtils.GetRandomBetween(0, randomNumberCalculation.Length - 1)];
-                                }
-                                numberBuilder.Append(numberRandom);
-                            }
-                            else
-                            {
-                                numberBuilder.Append(numberRandom);
-                            }
-                        }
-                        else
-                        {
-                            numberBuilder.Append(
-                                           randomNumberCalculation[
-                                               ClassUtils.GetRandomBetween(0, randomNumberCalculation.Length - 1)]);
-                        }
-                        counter++;
-                    }
-                    firstNombre = numberBuilder.ToString();
-                    numberBuilder.Clear();
-                }
+                string firstNumber = ClassUtils.GenerateNumberMathCalculation(minRange, maxRange, currentBlockDifficultyLength);
 
 
-                string secondNombre = "0";
+                string secondNumber = ClassUtils.GenerateNumberMathCalculation(minRange, maxRange, currentBlockDifficultyLength);
 
 
-                while (float.Parse(secondNombre) > maxRange || float.Parse(secondNombre) <= 1)
-                {
-                    var randomJobSize = ("" + ClassUtils.GetRandomBetweenJob(minRange, maxRange)).Length;
-                    int randomSize = ClassUtils.GetRandomBetween(1, randomJobSize);
-                    int counter = 0;
-                    while (counter < randomSize)
-                    {
-                        if (randomSize > 1)
-                        {
-                            var numberRandom = randomNumberCalculation[
-                                ClassUtils.GetRandomBetween(0, randomNumberCalculation.Length - 1)];
-                            if (counter == 0)
-                            {
-                                while (numberRandom == "0")
-                                {
-                                    numberRandom = randomNumberCalculation[
-                                        ClassUtils.GetRandomBetween(0, randomNumberCalculation.Length - 1)];
-                                }
-                                numberBuilder.Append(numberRandom);
-                            }
-                            else
-                            {
-                                numberBuilder.Append(numberRandom);
-                            }
-                        }
-                        else
-                        {
-                            numberBuilder.Append(
-                                randomNumberCalculation[
-                                    ClassUtils.GetRandomBetween(0, randomNumberCalculation.Length - 1)]);
-                        }
-                        counter++;
-                    }
-                    secondNombre = numberBuilder.ToString();
-                    numberBuilder.Clear();
-                }
-
-
-                float computeNumberSize = firstNombre.Length + secondNombre.Length;
+                float computeNumberSize = firstNumber.Length + secondNumber.Length;
 
                 if (computeNumberSize >= currentBlockDifficultyLength - 1 && computeNumberSize <= currentBlockDifficultyLength)
                 {
-                    for (int k = 0; k < randomOperatorCalculation.Length; k++)
+                    for (int k = 0; k < ClassUtils.randomOperatorCalculation.Length; k++)
                     {
-                        if (k < randomOperatorCalculation.Length)
-                        {
-                            string calcul = firstNombre + " " + randomOperatorCalculation[k] + " " + secondNombre;
+                        TotalMiningRound[idThread]++;
 
-                            float calculCompute = 0;
-                            if (calcul.Contains("+"))
-                            {
-                                calculCompute = float.Parse(firstNombre) + float.Parse(secondNombre);
-                                calculCompute = (float)Math.Round(calculCompute, 0);
-                            }
-                            else if (calcul.Contains("*"))
-                            {
-                                calculCompute = float.Parse(firstNombre) * float.Parse(secondNombre);
-                                calculCompute = (float)Math.Round(calculCompute, 0);
-                            }
-                            else if (calcul.Contains("%"))
-                            {
-                                calculCompute = float.Parse(firstNombre) % float.Parse(secondNombre);
-                                calculCompute = (float)Math.Round(calculCompute, 0);
-                            }
-                            else if (calcul.Contains("-"))
-                            {
-                                calculCompute = float.Parse(firstNombre) - float.Parse(secondNombre);
-                                calculCompute = (float)Math.Round(calculCompute, 0);
-                            }
-                            else if (calcul.Contains("/"))
-                            {
-                                calculCompute = float.Parse(firstNombre) / float.Parse(secondNombre);
-                                calculCompute = (float)Math.Round(calculCompute, 0);
-                            }
+                        if (k < ClassUtils.randomOperatorCalculation.Length)
+                        {
+                            string calcul = firstNumber + " " + ClassUtils.randomOperatorCalculation[k] + " " + secondNumber;
+
+                            float calculCompute = ClassUtils.ComputeCalculation(firstNumber, ClassUtils.randomOperatorCalculation[k], secondNumber);
 
                             if (calculCompute > 1 && calculCompute <= currentBlockDifficulty)
                             {
-
 
                                 string encryptedShare = calcul;
 
@@ -1178,6 +1078,7 @@ namespace Xiropht_Solo_Miner
                                 encryptedShare = ClassAlgo.GetEncryptedResult(CurrentBlockAlgorithm, encryptedShare, CurrentBlockKey, roundSize, Encoding.UTF8.GetBytes(roundKey));
 
                                 encryptedShare = ClassUtils.GenerateSHA512(encryptedShare);
+
                                 string hashShare = ClassUtils.GenerateSHA512(encryptedShare);
 
                                 TotalMiningHashrateRound[idThread]++;
@@ -1196,82 +1097,48 @@ namespace Xiropht_Solo_Miner
 
                                         if (!UseProxy)
                                         {
-                                            new Thread(async delegate ()
+                                            if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                                ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                                calculCompute +
+                                                "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, CertificateConnection, false, true))
                                             {
-
-                                                if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                    ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                                    calculCompute +
-                                                    "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, CertificateConnection, false, true))
-                                                {
-                                                    DisconnectNetwork();
-                                                }
-                                            }).Start();
+                                                DisconnectNetwork();
+                                                break;
+                                            }
                                         }
                                         else
                                         {
-                                            new Thread(async delegate ()
+
+                                            if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                             ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                             calculCompute +
+                                             "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
                                             {
-                                                if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                 ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                                 calculCompute +
-                                                 "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
-                                                {
-                                                    DisconnectNetwork();
-                                                }
-                                            }).Start();
+                                                DisconnectNetwork();
+                                                break;
+                                            }
                                         }
                                     }
                                 }
                                 else
                                 {
-
-
-                                    new Thread(async delegate ()
+                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                                                          ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                                                          calculCompute +
+                                                                          "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
                                     {
-                                        if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                        ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                        calculCompute +
-                                        "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
-                                        {
-                                            DisconnectNetwork();
-                                        }
-                                    }).Start();
+                                        DisconnectNetwork();
+                                        break;
+                                    }
                                 }
 
                             }
                             else
                             {
-                                calcul = secondNombre + " " + randomOperatorCalculation[k] + " " + firstNombre;
-
-                                calculCompute = 0;
-                                if (calcul.Contains("+"))
-                                {
-                                    calculCompute = float.Parse(secondNombre) + float.Parse(firstNombre);
-                                    calculCompute = (float)Math.Round(calculCompute, 0);
-                                }
-                                else if (calcul.Contains("*"))
-                                {
-                                    calculCompute = float.Parse(secondNombre) * float.Parse(firstNombre);
-                                    calculCompute = (float)Math.Round(calculCompute, 0);
-                                }
-                                else if (calcul.Contains("%"))
-                                {
-                                    calculCompute = float.Parse(secondNombre) % float.Parse(firstNombre);
-                                    calculCompute = (float)Math.Round(calculCompute, 0);
-                                }
-                                else if (calcul.Contains("-"))
-                                {
-                                    calculCompute = float.Parse(secondNombre) - float.Parse(firstNombre);
-                                    calculCompute = (float)Math.Round(calculCompute, 0);
-                                }
-                                else if (calcul.Contains("/"))
-                                {
-                                    calculCompute = float.Parse(secondNombre) / float.Parse(firstNombre);
-                                    calculCompute = (float)Math.Round(calculCompute, 0);
-                                }
+                                calcul = secondNumber + " " + ClassUtils.randomOperatorCalculation[k] + " " + firstNumber;
 
 
+                                calculCompute = ClassUtils.ComputeCalculation(secondNumber, ClassUtils.randomOperatorCalculation[k], firstNumber);
                                 if (calculCompute > 1 && calculCompute <= currentBlockDifficulty)
                                 {
 
@@ -1308,55 +1175,49 @@ namespace Xiropht_Solo_Miner
 
                                             if (!UseProxy)
                                             {
-                                                new Thread(async delegate ()
+                                                if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                                    ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                                    calculCompute +
+                                                    "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, CertificateConnection, false, true))
                                                 {
-
-                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                        ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                                        calculCompute +
-                                                        "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, CertificateConnection, false, true))
-                                                    {
-                                                        DisconnectNetwork();
-                                                    }
-                                                }).Start();
+                                                    DisconnectNetwork();
+                                                    break;
+                                                }
                                             }
                                             else
                                             {
-                                                new Thread(async delegate ()
+                                                if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                                 ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                                 calculCompute +
+                                                 "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
                                                 {
-                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                     ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                                     calculCompute +
-                                                     "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
-                                                    {
-                                                        DisconnectNetwork();
-                                                    }
-                                                }).Start();
+                                                    DisconnectNetwork();
+                                                    break;
+                                                }
                                             }
                                         }
                                     }
                                     else
                                     {
-
-
-                                        new Thread(async delegate ()
+                                        if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                        ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                        calculCompute +
+                                        "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
                                         {
-                                            if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                            ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                            calculCompute +
-                                            "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
-                                            {
-                                                DisconnectNetwork();
-                                            }
-                                        }).Start();
+                                            DisconnectNetwork();
+                                            break;
+                                        }
                                     }
                                 }
+
                             }
                         }
-                        TotalMiningRound[idThread]++;
+
+
                     }
                 }
             }
+
         }
 
         /// <summary>
