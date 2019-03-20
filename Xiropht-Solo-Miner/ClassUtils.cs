@@ -144,27 +144,22 @@ namespace Xiropht_Solo_Miner
             if (operatorCalculation.Contains("+"))
             {
                 calculCompute = float.Parse(firstNumber) + float.Parse(secondNumber);
-                calculCompute = (float)Math.Round(calculCompute, 0);
             }
             else if (operatorCalculation.Contains("*"))
             {
                 calculCompute = float.Parse(firstNumber) * float.Parse(secondNumber);
-                calculCompute = (float)Math.Round(calculCompute, 0);
             }
             else if (operatorCalculation.Contains("%"))
             {
                 calculCompute = float.Parse(firstNumber) % float.Parse(secondNumber);
-                calculCompute = (float)Math.Round(calculCompute, 0);
             }
             else if (operatorCalculation.Contains("-"))
             {
                 calculCompute = float.Parse(firstNumber) - float.Parse(secondNumber);
-                calculCompute = (float)Math.Round(calculCompute, 0);
             }
             else if (operatorCalculation.Contains("/"))
             {
                 calculCompute = float.Parse(firstNumber) / float.Parse(secondNumber);
-                calculCompute = (float)Math.Round(calculCompute, 0);
             }
             return calculCompute;
         }
