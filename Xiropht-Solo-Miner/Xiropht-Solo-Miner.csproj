@@ -74,6 +74,7 @@
     <Compile Include="ClassAlgo.cs" />
     <Compile Include="ClassConsole.cs" />
     <Compile Include="ClassUtils.cs" />
+    <Compile Include="PriorityScheduler.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

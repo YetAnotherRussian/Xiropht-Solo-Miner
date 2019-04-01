@@ -81,8 +81,8 @@ namespace Xiropht_Solo_Miner
         private static CancellationTokenSource cts = new CancellationTokenSource();
         public static List<int> TotalMiningRound = new List<int>();
         public static List<int> TotalMiningHashrateRound = new List<int>();
-        public static int TotalHashrate;
-        public static int TotalCalculation;
+        public static float TotalHashrate;
+        public static float TotalCalculation;
         public static int ThreadMiningPriority;
 
         /// <summary>
@@ -452,7 +452,6 @@ namespace Xiropht_Solo_Miner
             if (!_checkNetworkEnabled)
             {
                 _checkNetworkEnabled = true;
-                CalculateHashrate();
             }
         }
 
@@ -553,7 +552,7 @@ namespace Xiropht_Solo_Miner
                                                 }
                                                 if (packetRequest != ClassSeedNodeStatus.SeedNone && packetRequest != ClassSeedNodeStatus.SeedError)
                                                 {
-                                                    await Task.Run(async () => await HandlePacketMiningAsync(packetRequest));
+                                                    await Task.Factory.StartNew(() => HandlePacketMiningAsync(packetRequest), CancellationToken.None, TaskCreationOptions.RunContinuationsAsynchronously, PriorityScheduler.Lowest).ConfigureAwait(false);
                                                 }
                                             }
                                         }
@@ -570,7 +569,7 @@ namespace Xiropht_Solo_Miner
                                 }
                                 if (packet != ClassSeedNodeStatus.SeedNone && packet != ClassSeedNodeStatus.SeedError)
                                 {
-                                    await Task.Run(async () => await HandlePacketMiningAsync(packet));
+                                    await Task.Factory.StartNew(() => HandlePacketMiningAsync(packet), CancellationToken.None, TaskCreationOptions.RunContinuationsAsynchronously, PriorityScheduler.Lowest).ConfigureAwait(false);
                                 }
                             }
                         }
@@ -585,7 +584,7 @@ namespace Xiropht_Solo_Miner
                             }
                             if (packet != ClassSeedNodeStatus.SeedNone)
                             {
-                                await Task.Run(async () => await HandlePacketMiningAsync(packet));
+                                await Task.Factory.StartNew(() => HandlePacketMiningAsync(packet), CancellationToken.None, TaskCreationOptions.RunContinuationsAsynchronously, PriorityScheduler.Lowest).ConfigureAwait(false);
                             }
                         }
                     }
@@ -727,6 +726,7 @@ namespace Xiropht_Solo_Miner
                         break;
                     case ClassSoloMiningPacketEnumeration.SoloMiningRecvPacketEnumeration.SendCurrentBlockMining:
 
+                        CalculateHashrate();
                         bool proxy = false;
                         var splitBlockContent = splitPacket[1].Split(new[] { "&" }, StringSplitOptions.None);
                         if (UseProxy)
@@ -1225,113 +1225,118 @@ namespace Xiropht_Solo_Miner
 
         }
 
+        private static bool CalculateHashrateEnabled;
+
         /// <summary>
         /// Calculate the hashrate of the solo miner.
         /// </summary>
         private static void CalculateHashrate()
         {
-
-            new Thread(async () =>
-             {
-                 var counterTime = 0;
-                 while (true)
+            if (!CalculateHashrateEnabled)
+            {
+                CalculateHashrateEnabled = true;
+                new Thread(async () =>
                  {
-                     try
+                     var counterTime = 0;
+                     while (true)
                      {
+                         try
+                         {
 
-                         int totalRound = 1;
-                         int totalRoundHashrate = 1;
-                         for (int i = 0; i < TotalMiningRound.Count; i++)
-                         {
-                             if (i < TotalMiningRound.Count)
+                             float totalRound = 0;
+                             float totalRoundHashrate = 0;
+                             for (int i = 0; i < TotalMiningRound.Count; i++)
                              {
-                                 totalRound += TotalMiningRound[i];
-                                 if (counterTime >= HashrateIntervalCalculation && CanMining)
+                                 if (i < TotalMiningRound.Count)
                                  {
-                                     ClassConsole.WriteLine("Calculation Speed Thread " + i + " : " + (TotalMiningRound[i]) + " C/s", 4);
-                                 }
-                             }
-                         }
-
-                         for (int i = 0; i < TotalMiningHashrateRound.Count; i++)
-                         {
-                             if (i < TotalMiningHashrateRound.Count)
-                             {
-                                 totalRoundHashrate += TotalMiningHashrateRound[i];
-                                 if (counterTime >= HashrateIntervalCalculation && CanMining)
-                                 {
-                                     ClassConsole.WriteLine("Encryption Speed Thread " + i + " : " + (TotalMiningHashrateRound[i]) + " H/s", 4);
-                                 }
-                             }
-                         }
-
-
-                         TotalCalculation = (totalRound);
-                         TotalHashrate = (totalRoundHashrate);
-                         float accuratePourcent = 0;
-                         if (TotalHashrate != 0 && TotalCalculation != 0)
-                         {
-                             accuratePourcent = ((float)TotalHashrate / (float)TotalCalculation) * 100;
-                             accuratePourcent = (float)Math.Round(accuratePourcent, 2);
-                         }
-                         for (int i = 0; i < TotalMiningRound.Count; i++)
-                         {
-                             if (i < TotalMiningRound.Count)
-                             {
-                                 TotalMiningRound[i] = 0;
-                             }
-                         }
-                         for (int i = 0; i < TotalMiningHashrateRound.Count; i++)
-                         {
-                             if (i < TotalMiningHashrateRound.Count)
-                             {
-                                 TotalMiningHashrateRound[i] = 0;
-                             }
-                         }
-                         if (CanMining)
-                         {
-                             if (counterTime == HashrateIntervalCalculation)
-                             {
-                                 if (!UseProxy)
-                                 {
-                                     ClassConsole.WriteLine("Mining Speed: " + TotalCalculation + " C/s | " + TotalHashrate + " H/s | Accurate Rate " + accuratePourcent + "% > UNLOCK[" + TotalBlockAccepted + "] REFUSED[" + TotalBlockRefused + "]", 4);
-                                 }
-                                 else
-                                 {
-                                     if (ProxyWantShare)
+                                     totalRound += TotalMiningRound[i];
+                                     if (counterTime >= HashrateIntervalCalculation && CanMining)
                                      {
-                                         ClassConsole.WriteLine("Mining Speed: " + TotalCalculation + " C/s | " + TotalHashrate + " H/s | Accurate Rate " + accuratePourcent + "% > GOOD[" + TotalShareAccepted + "] INVALID[" + TotalShareInvalid + "]", 4);
+                                         ClassConsole.WriteLine("Calculation Speed Thread " + i + " : " + (TotalMiningRound[i]) + " C/s", 4);
                                      }
-                                     else
+                                 }
+                             }
+
+                             for (int i = 0; i < TotalMiningHashrateRound.Count; i++)
+                             {
+                                 if (i < TotalMiningHashrateRound.Count)
+                                 {
+                                     totalRoundHashrate += TotalMiningHashrateRound[i];
+                                     if (counterTime >= HashrateIntervalCalculation && CanMining)
+                                     {
+                                         ClassConsole.WriteLine("Encryption Speed Thread " + i + " : " + (TotalMiningHashrateRound[i]) + " H/s", 4);
+                                     }
+                                 }
+                             }
+
+
+                             TotalCalculation = (totalRound);
+                             TotalHashrate = (totalRoundHashrate);
+                             float accuratePourcent = 0;
+                             if (TotalHashrate != 0 && TotalCalculation != 0)
+                             {
+                                 accuratePourcent = (TotalHashrate / TotalCalculation) * 100;
+                                 accuratePourcent = (float)Math.Round(accuratePourcent, 2);
+                             }
+                             for (int i = 0; i < TotalMiningRound.Count; i++)
+                             {
+                                 if (i < TotalMiningRound.Count)
+                                 {
+                                     TotalMiningRound[i] = 0;
+                                 }
+                             }
+                             for (int i = 0; i < TotalMiningHashrateRound.Count; i++)
+                             {
+                                 if (i < TotalMiningHashrateRound.Count)
+                                 {
+                                     TotalMiningHashrateRound[i] = 0;
+                                 }
+                             }
+                             if (CanMining)
+                             {
+                                 if (counterTime == HashrateIntervalCalculation)
+                                 {
+                                     if (!UseProxy)
                                      {
                                          ClassConsole.WriteLine("Mining Speed: " + TotalCalculation + " C/s | " + TotalHashrate + " H/s | Accurate Rate " + accuratePourcent + "% > UNLOCK[" + TotalBlockAccepted + "] REFUSED[" + TotalBlockRefused + "]", 4);
                                      }
+                                     else
+                                     {
+                                         if (ProxyWantShare)
+                                         {
+                                             ClassConsole.WriteLine("Mining Speed: " + TotalCalculation + " C/s | " + TotalHashrate + " H/s | Accurate Rate " + accuratePourcent + "% > GOOD[" + TotalShareAccepted + "] INVALID[" + TotalShareInvalid + "]", 4);
+                                         }
+                                         else
+                                         {
+                                             ClassConsole.WriteLine("Mining Speed: " + TotalCalculation + " C/s | " + TotalHashrate + " H/s | Accurate Rate " + accuratePourcent + "% > UNLOCK[" + TotalBlockAccepted + "] REFUSED[" + TotalBlockRefused + "]", 4);
+                                         }
+                                     }
                                  }
-                             }
-                             if (counterTime < HashrateIntervalCalculation)
-                             {
-                                 counterTime++;
-                             }
-                             else
-                             {
-                                 counterTime = 0;
-                             }
-                             if (UseProxy) // Share hashrate information to the proxy solo miner.
-                             {
-                                 if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ShareHashrate+"|"+TotalHashrate, string.Empty, false, false))
+                                 if (counterTime < HashrateIntervalCalculation)
                                  {
-                                     DisconnectNetwork();
+                                     counterTime++;
+                                 }
+                                 else
+                                 {
+                                     counterTime = 0;
+                                 }
+                                 if (UseProxy) // Share hashrate information to the proxy solo miner.
+                             {
+                                     if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ShareHashrate + "|" + TotalHashrate, string.Empty, false, false))
+                                     {
+                                         DisconnectNetwork();
+                                     }
                                  }
                              }
-                         }
 
-                     }
-                     catch
-                     {
-                     }
-                     Thread.Sleep(1000); // Each 1 seconds
-                }
-             }).Start();
+                         }
+                         catch
+                         {
+                         }
+                         Thread.Sleep(1000); // Each 1 seconds
+                 }
+                 }).Start();
+            }
         }
 
         /// <summary>

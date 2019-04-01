@@ -44,7 +44,7 @@ namespace Xiropht_Solo_Miner
                     float accuratePourcent = 0;
                     if (Program.TotalHashrate != 0 && Program.TotalCalculation != 0)
                     {
-                        accuratePourcent = ((float)Program.TotalHashrate / (float)Program.TotalCalculation) * 100;
+                        accuratePourcent = (Program.TotalHashrate / Program.TotalCalculation) * 100;
                         accuratePourcent = (float)Math.Round(accuratePourcent, 2);
                     }
                     if (!Program.UseProxy)
