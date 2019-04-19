@@ -1321,7 +1321,7 @@ namespace Xiropht_Solo_Miner
                                      counterTime = 0;
                                  }
                                  if (UseProxy) // Share hashrate information to the proxy solo miner.
-                             {
+                                 {
                                      if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ShareHashrate + "|" + TotalHashrate, string.Empty, false, false))
                                      {
                                          DisconnectNetwork();
