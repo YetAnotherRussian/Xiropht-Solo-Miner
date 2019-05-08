@@ -41,3 +41,6 @@ Hashrate test [Updated 13/02/2019]:
 
 For more informations about how work the Xiropht Mining System, please check out the Wiki: https://github.com/XIROPHT/Xiropht-Solo-Miner/wiki
 
+**Developers:**
+
+- Xiropht (Sam Segura)
