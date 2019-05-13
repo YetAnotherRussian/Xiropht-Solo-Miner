@@ -43,21 +43,21 @@ namespace Xiropht_Solo_Miner
         /// <param name="minimumValue"></param>
         /// <param name="maximumValue"></param>
         /// <returns></returns>
-        public static float GetRandomBetweenJob(float minimumValue, float maximumValue)
+        public static decimal GetRandomBetweenJob(decimal minimumValue, decimal maximumValue)
         {
             using (RNGCryptoServiceProvider Generator = new RNGCryptoServiceProvider())
             {
-                var randomNumber = new byte[sizeof(float)];
+                var randomNumber = new byte[sizeof(decimal)];
 
                 Generator.GetBytes(randomNumber);
 
-                var asciiValueOfRandomCharacter = (float)Convert.ToDouble(randomNumber[0]);
+                var asciiValueOfRandomCharacter = (decimal)Convert.ToDouble(randomNumber[0]);
 
-                var multiplier = (float)Math.Max(0, asciiValueOfRandomCharacter / 255d - 0.00000000001d);
+                var multiplier = (decimal)Math.Max(0, asciiValueOfRandomCharacter / 255m - 0.00000000001m);
 
                 var range = maximumValue - minimumValue + 1;
 
-                var randomValueInRange = (float)Math.Floor(multiplier * range);
+                var randomValueInRange = (decimal)Math.Floor(multiplier * range);
                 return (minimumValue + randomValueInRange);
             }
         }
@@ -138,29 +138,28 @@ namespace Xiropht_Solo_Miner
         /// <param name="operatorCalculation"></param>
         /// <param name="secondNumber"></param>
         /// <returns></returns>
-        public static float ComputeCalculation(string firstNumber, string operatorCalculation, string secondNumber)
+        public static decimal ComputeCalculation(string firstNumber, string operatorCalculation, string secondNumber)
         {
-            float calculCompute = 0;
-            if (operatorCalculation.Contains("+"))
+            decimal calculCompute = 0;
+            switch(operatorCalculation)
             {
-                calculCompute = float.Parse(firstNumber) + float.Parse(secondNumber);
+                case "+":
+                    calculCompute = decimal.Parse(firstNumber) + decimal.Parse(secondNumber);
+                    break;
+                case "-":
+                    calculCompute = decimal.Parse(firstNumber) - decimal.Parse(secondNumber);
+                    break;
+                case "*":
+                    calculCompute = decimal.Parse(firstNumber) * decimal.Parse(secondNumber);
+                    break;
+                case "%":
+                    calculCompute = decimal.Parse(firstNumber) % decimal.Parse(secondNumber);
+                    break;
+                case "/":
+                    calculCompute = decimal.Parse(firstNumber) / decimal.Parse(secondNumber);
+                    break;
             }
-            else if (operatorCalculation.Contains("*"))
-            {
-                calculCompute = float.Parse(firstNumber) * float.Parse(secondNumber);
-            }
-            else if (operatorCalculation.Contains("%"))
-            {
-                calculCompute = float.Parse(firstNumber) % float.Parse(secondNumber);
-            }
-            else if (operatorCalculation.Contains("-"))
-            {
-                calculCompute = float.Parse(firstNumber) - float.Parse(secondNumber);
-            }
-            else if (operatorCalculation.Contains("/"))
-            {
-                calculCompute = float.Parse(firstNumber) / float.Parse(secondNumber);
-            }
+
             return calculCompute;
         }
 
@@ -168,13 +167,13 @@ namespace Xiropht_Solo_Miner
         /// Return a number for complete a math calculation text.
         /// </summary>
         /// <returns></returns>
-        public static string GenerateNumberMathCalculation(float minRange, float maxRange, int currentBlockDifficultyLength)
+        public static string GenerateNumberMathCalculation(decimal minRange, decimal maxRange, int currentBlockDifficultyLength)
         {
             string number = "0";
             StringBuilder numberBuilder = new StringBuilder();
-            while (float.Parse(number) > maxRange || float.Parse(number) <= 1 || number.Length > currentBlockDifficultyLength)
+            while (decimal.Parse(number) > maxRange || decimal.Parse(number) <= 1 || number.Length > currentBlockDifficultyLength)
             {
-                var randomJobSize = ("" + GetRandomBetweenJob(minRange, maxRange)).Length;
+                var randomJobSize = GetRandomBetweenJob(minRange, maxRange).ToString("F0").Length;
 
                 int randomSize = GetRandomBetween(1, randomJobSize);
                 int counter = 0;

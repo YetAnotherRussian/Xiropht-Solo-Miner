@@ -41,27 +41,7 @@ namespace Xiropht_Solo_Miner
             switch (command.ToLower())
             {
                 case "h":
-                    float accuratePourcent = 0;
-                    if (Program.TotalHashrate != 0 && Program.TotalCalculation != 0)
-                    {
-                        accuratePourcent = (Program.TotalHashrate / Program.TotalCalculation) * 100;
-                        accuratePourcent = (float)Math.Round(accuratePourcent, 2);
-                    }
-                    if (!Program.UseProxy)
-                    {
-                        WriteLine("Mining Speed: " + Program.TotalCalculation + " C/s | " + Program.TotalHashrate + " H/s | Accurate Rate " + accuratePourcent + "% > UNLOCK[" + Program.TotalBlockAccepted + "] REFUSED[" + Program.TotalBlockRefused + "]", 4);
-                    }
-                    else
-                    {
-                        if (Program.ProxyWantShare)
-                        {
-                            WriteLine("Mining Speed: " + Program.TotalCalculation + " C/s | " + Program.TotalHashrate + " H/s | Accurate Rate " + accuratePourcent + "% > GOOD[" + Program.TotalShareAccepted + "] INVALID[" + Program.TotalShareInvalid + "]", 4);
-                        }
-                        else
-                        {
-                            WriteLine("Mining Speed: " + Program.TotalCalculation + " C/s | " + Program.TotalHashrate + " H/s | Accurate Rate " + accuratePourcent + "% > UNLOCK[" + Program.TotalBlockAccepted + "] REFUSED[" + Program.TotalBlockRefused + "]", 4);
-                        }
-                    }
+                    WriteLine(Program.TotalHashrate + " H/s > UNLOCK[" + Program.TotalBlockAccepted + "] REFUSED[" + Program.TotalBlockRefused + "]", 4);
                     break;
                 case "d":
                     WriteLine("Current Block: " + Program.CurrentBlockId + " Difficulty: " + Program.CurrentBlockDifficulty);
