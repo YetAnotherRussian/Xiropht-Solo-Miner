@@ -279,6 +279,12 @@ namespace Xiropht_Solo_Miner
                                 MiningPercentDifficultyStart--;
                             }
                         }
+                        if (MiningPercentDifficultyEnd < MiningPercentDifficultyStart)
+                        {
+                            var tmpPercentStart = MiningPercentDifficultyStart;
+                            MiningPercentDifficultyStart = MiningPercentDifficultyEnd;
+                            MiningPercentDifficultyEnd = tmpPercentStart;
+                        }
                     }
 
                     UseProxy = true;
