@@ -67,8 +67,8 @@ namespace Xiropht_Solo_Miner
         public static bool ProxyWantShare;
         private static string ProxyHost;
         private static int ProxyPort;
-        private static int MiningPourcentDifficultyEnd;
-        private static int MiningPourcentDifficultyStart;
+        private static int MiningPercentDifficultyEnd;
+        private static int MiningPercentDifficultyStart;
 
         /// <summary>
         /// Threading.
@@ -124,8 +124,8 @@ namespace Xiropht_Solo_Miner
 
             };
             ThreadMiningPriority = 2; // By Default
-            MiningPourcentDifficultyEnd = 0; // By Default
-            MiningPourcentDifficultyStart = 0; // By Default
+            MiningPercentDifficultyEnd = 0; // By Default
+            MiningPercentDifficultyStart = 0; // By Default
             if (File.Exists(GetCurrentPathConfig()))
             {
                 StreamReader reader = new StreamReader(GetCurrentPathConfig());
@@ -168,19 +168,27 @@ namespace Xiropht_Solo_Miner
                     }
                     else if (line.Contains("MINING_DIFFICULTY="))
                     {
-                        MiningPourcentDifficultyEnd = int.Parse(line.Replace("MINING_DIFFICULTY=", ""));
+                        MiningPercentDifficultyEnd = int.Parse(line.Replace("MINING_DIFFICULTY=", ""));
                     }
                     else if (line.Contains("MINING_POSITION_DIFFICULTY="))
                     {
-                        MiningPourcentDifficultyStart = int.Parse(line.Replace("MINING_POSITION_DIFFICULTY=", ""));
+                        MiningPercentDifficultyStart = int.Parse(line.Replace("MINING_POSITION_DIFFICULTY=", ""));
                     }
                     else if (line.Contains("MINING_POURCENT_DIFFICULTY_START="))
                     {
-                        MiningPourcentDifficultyStart = int.Parse(line.Replace("MINING_POURCENT_DIFFICULTY_START=", ""));
+                        MiningPercentDifficultyStart = int.Parse(line.Replace("MINING_POURCENT_DIFFICULTY_START=", ""));
                     }
                     else if (line.Contains("MINING_POURCENT_DIFFICULTY_END="))
                     {
-                        MiningPourcentDifficultyEnd = int.Parse(line.Replace("MINING_POURCENT_DIFFICULTY_END=", ""));
+                        MiningPercentDifficultyEnd = int.Parse(line.Replace("MINING_POURCENT_DIFFICULTY_END=", ""));
+                    }
+                    else if (line.Contains("MINING_PERCENT_DIFFICULTY_START="))
+                    {
+                        MiningPercentDifficultyStart = int.Parse(line.Replace("MINING_PERCENT_DIFFICULTY_START=", ""));
+                    }
+                    else if (line.Contains("MINING_PERCENT_DIFFICULTY_END="))
+                    {
+                        MiningPercentDifficultyEnd = int.Parse(line.Replace("MINING_PERCENT_DIFFICULTY_END=", ""));
                     }
                 }
                 ThreadMining = new Thread[TotalThreadMining];
@@ -228,36 +236,48 @@ namespace Xiropht_Solo_Miner
                     {
                         Console.WriteLine("This is not a port number, please try again: ");
                     }
-                    Console.WriteLine("Do you want select a mining range pourcentage of difficulty? [Y/N]");
+                    Console.WriteLine("Do you want select a mining range percentage of difficulty? [Y/N]");
                     choose = Console.ReadLine();
                     if (choose == "Y" || choose == "y")
                     {
-                        Console.WriteLine("Select the start pourcentage range of difficulty [0 to 100]:");
-                        while(!int.TryParse(Console.ReadLine(), out MiningPourcentDifficultyStart))
+                        Console.WriteLine("Select the start percentage range of difficulty [0 to 100]:");
+                        while (!int.TryParse(Console.ReadLine(), out MiningPercentDifficultyStart))
                         {
                             Console.WriteLine("This is not a number, please try again: ");
                         }
-                        if (MiningPourcentDifficultyStart > 99)
+                        if (MiningPercentDifficultyStart > 100)
                         {
-                            MiningPourcentDifficultyStart = 99;
+                            MiningPercentDifficultyStart = 100;
                         }
-                        if (MiningPourcentDifficultyStart < 0)
+                        if (MiningPercentDifficultyStart < 0)
                         {
-                            MiningPourcentDifficultyStart = 0;
+                            MiningPercentDifficultyStart = 0;
                         }
 
-                        Console.WriteLine("Select the end pourcentage range of difficulty [0 to 99]: ");
-                        while (!int.TryParse(Console.ReadLine(), out MiningPourcentDifficultyEnd))
+                        Console.WriteLine("Select the end percentage range of difficulty [" + MiningPercentDifficultyStart+" to 100]: ");
+                        while (!int.TryParse(Console.ReadLine(), out MiningPercentDifficultyEnd))
                         {
                             Console.WriteLine("This is not a number, please try again: ");
                         }
-                        if (MiningPourcentDifficultyEnd < 1)
+                        if (MiningPercentDifficultyEnd < 1)
                         {
-                            MiningPourcentDifficultyEnd = 1;
+                            MiningPercentDifficultyEnd = 1;
                         }
-                        else if (MiningPourcentDifficultyEnd > 100)
+                        else if (MiningPercentDifficultyEnd > 100)
                         {
-                            MiningPourcentDifficultyEnd = 100;
+                            MiningPercentDifficultyEnd = 100;
+                        }
+
+                        if (MiningPercentDifficultyStart > MiningPercentDifficultyEnd)
+                        {
+                            MiningPercentDifficultyStart -= (MiningPercentDifficultyStart - MiningPercentDifficultyEnd);
+                        }
+                        else
+                        {
+                            if (MiningPercentDifficultyStart == MiningPercentDifficultyEnd)
+                            {
+                                MiningPercentDifficultyStart--;
+                            }
                         }
                     }
 
@@ -351,16 +371,16 @@ namespace Xiropht_Solo_Miner
                 writeConfig.WriteLine("PROXY_ENABLE=Y");
                 writeConfig.WriteLine("PROXY_PORT=" + ProxyPort);
                 writeConfig.WriteLine("PROXY_HOST=" + ProxyHost);
-                writeConfig.WriteLine("MINING_POURCENT_DIFFICULTY_START=" + MiningPourcentDifficultyStart);
-                writeConfig.WriteLine("MINING_POURCENT_DIFFICULTY_END=" + MiningPourcentDifficultyEnd);
+                writeConfig.WriteLine("MINING_PERCENT_DIFFICULTY_START=" + MiningPercentDifficultyStart);
+                writeConfig.WriteLine("MINING_PERCENT_DIFFICULTY_END=" + MiningPercentDifficultyEnd);
             }
             else
             {
                 writeConfig.WriteLine("PROXY_ENABLE=N");
                 writeConfig.WriteLine("PROXY_PORT=0");
                 writeConfig.WriteLine("PROXY_HOST=NONE");
-                writeConfig.WriteLine("MINING_POURCENT_DIFFICULTY_START=0");
-                writeConfig.WriteLine("MINING_POURCENT_DIFFICULTY_END=0");
+                writeConfig.WriteLine("MINING_PERCENT_DIFFICULTY_START=0");
+                writeConfig.WriteLine("MINING_PERCENT_DIFFICULTY_END=0");
 
             }
             writeConfig.Close();
@@ -438,7 +458,7 @@ namespace Xiropht_Solo_Miner
                     Thread.Sleep(PacketSpeedSend);
                 }
                 ClassConsole.WriteLine("Send wallet address for login your solo miner..", 2);
-                await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync("MINER|" + WalletAddress + "|"+MiningPourcentDifficultyEnd+"|"+MiningPourcentDifficultyStart+"|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false);
+                await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync("MINER|" + WalletAddress + "|"+MiningPercentDifficultyEnd+"|"+MiningPercentDifficultyStart+"|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false);
             }
             ListenNetwork();
             CheckNetwork();
