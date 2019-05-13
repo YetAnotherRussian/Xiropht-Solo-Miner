@@ -232,20 +232,7 @@ namespace Xiropht_Solo_Miner
                     choose = Console.ReadLine();
                     if (choose == "Y" || choose == "y")
                     {
-                        Console.WriteLine("Select the start pourcentage range of difficulty [0 to 99]: ");
-                        while (!int.TryParse(Console.ReadLine(), out MiningPourcentDifficultyEnd))
-                        {
-                            Console.WriteLine("This is not a number, please try again: ");
-                        }
-                        if (MiningPourcentDifficultyEnd < 1)
-                        {
-                            MiningPourcentDifficultyEnd = 1;
-                        }
-                        else if (MiningPourcentDifficultyEnd > 100)
-                        {
-                            MiningPourcentDifficultyEnd = 100;
-                        }
-                        Console.WriteLine("Select the end pourcentage range of difficulty [0 to 100]:");
+                        Console.WriteLine("Select the start pourcentage range of difficulty [0 to 100]:");
                         while(!int.TryParse(Console.ReadLine(), out MiningPourcentDifficultyStart))
                         {
                             Console.WriteLine("This is not a number, please try again: ");
@@ -257,6 +244,20 @@ namespace Xiropht_Solo_Miner
                         if (MiningPourcentDifficultyStart < 0)
                         {
                             MiningPourcentDifficultyStart = 0;
+                        }
+
+                        Console.WriteLine("Select the end pourcentage range of difficulty [0 to 99]: ");
+                        while (!int.TryParse(Console.ReadLine(), out MiningPourcentDifficultyEnd))
+                        {
+                            Console.WriteLine("This is not a number, please try again: ");
+                        }
+                        if (MiningPourcentDifficultyEnd < 1)
+                        {
+                            MiningPourcentDifficultyEnd = 1;
+                        }
+                        else if (MiningPourcentDifficultyEnd > 100)
+                        {
+                            MiningPourcentDifficultyEnd = 100;
                         }
                     }
 
