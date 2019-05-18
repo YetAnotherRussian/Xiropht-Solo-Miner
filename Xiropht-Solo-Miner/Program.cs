@@ -551,7 +551,6 @@ namespace Xiropht_Solo_Miner
                         if (!UseProxy)
                         {
                             string packet =  await ObjectSeedNodeNetwork.ReceivePacketFromSeedNodeAsync(CertificateConnection, false, true);
-                            Console.WriteLine("packet received: " + packet);
                             if (packet.Contains("*"))
                             {
                                 var splitPacket = packet.Split(new[] { "*" }, StringSplitOptions.None);
@@ -1120,6 +1119,8 @@ namespace Xiropht_Solo_Miner
 
                                     if (!ProxyWantShare)
                                     {
+
+
                                         if (hashShare == CurrentBlockIndication)
                                         {
 
@@ -1147,6 +1148,57 @@ namespace Xiropht_Solo_Miner
                                                 {
                                                     DisconnectNetwork();
                                                     break;
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            byte[] targetBlockByte = ClassUtils.FromHexString(CurrentBlockIndication);
+                                            decimal targetBlockValue = Convert.ToDecimal(BitConverter.ToInt64(targetBlockByte, 0));
+                                            byte[] jobByte = ClassUtils.FromHexString(hashShare);
+                                            decimal jobValue = Convert.ToDecimal(BitConverter.ToInt64(jobByte, 0));
+                                            if (jobValue > 0)
+                                            {
+                                                byte[] shareByte = ClassUtils.FromHexString(encryptedShare);
+                                                decimal shareValue = Convert.ToDecimal(BitConverter.ToInt64(shareByte, 0));
+                                                if (shareValue > 0)
+                                                {
+                                                    decimal sumOfWorkValue = shareValue - jobValue;
+                                                    if (sumOfWorkValue > 0)
+                                                    {
+                                                        if (sumOfWorkValue >= targetBlockValue)
+                                                        {
+                                                            decimal powDifficultyValue = sumOfWorkValue - targetBlockValue;
+                                                            decimal approximativeEquality = Math.Abs((powDifficultyValue / targetBlockValue) * 100);
+                                                            if (approximativeEquality >= 100 && approximativeEquality <= 100.01m) // Max acceptance on the Blockchain
+                                                            {
+                                                                Console.WriteLine("seems to found the block with a share PoW Value. -> Pow Job Value: " + jobValue + " | Pow Share Value: " + shareValue + " | Sum of Work: " + sumOfWorkValue + " | Block Pow Value: " + targetBlockValue + " | Difficulty Pow Value: " + powDifficultyValue + "/" + targetBlockValue);
+                                                                if (!UseProxy)
+                                                                {
+                                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                                                        ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                                                        calculCompute.ToString("F0") +
+                                                                        "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, CertificateConnection, false, true))
+                                                                    {
+                                                                        DisconnectNetwork();
+                                                                        break;
+                                                                    }
+                                                                }
+                                                                else
+                                                                {
+
+                                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                                                     ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                                                     calculCompute.ToString("F0") +
+                                                                     "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
+                                                                    {
+                                                                        DisconnectNetwork();
+                                                                        break;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
@@ -1230,6 +1282,57 @@ namespace Xiropht_Solo_Miner
                                                         }
                                                     }
                                                 }
+                                                else
+                                                {
+                                                    byte[] targetBlockByte = ClassUtils.FromHexString(CurrentBlockIndication);
+                                                    decimal targetBlockValue = Convert.ToDecimal(BitConverter.ToInt64(targetBlockByte, 0));
+                                                    byte[] jobByte = ClassUtils.FromHexString(hashShare);
+                                                    decimal jobValue = Convert.ToDecimal(BitConverter.ToInt64(jobByte, 0));
+                                                    if (jobValue > 0)
+                                                    {
+                                                        byte[] shareByte = ClassUtils.FromHexString(encryptedShare);
+                                                        decimal shareValue = Convert.ToDecimal(BitConverter.ToInt64(shareByte, 0));
+                                                        if (shareValue > 0)
+                                                        {
+                                                            decimal sumOfWorkValue = shareValue - jobValue;
+                                                            if (sumOfWorkValue > 0)
+                                                            {
+                                                                if (sumOfWorkValue >= targetBlockValue)
+                                                                {
+                                                                    decimal powDifficultyValue = sumOfWorkValue - targetBlockValue;
+                                                                    decimal approximativeEquality = Math.Abs((powDifficultyValue / targetBlockValue) * 100);
+                                                                    if (approximativeEquality >= 100 && approximativeEquality <= 100.01m) // Max acceptance on the Blockchain
+                                                                    {
+                                                                        Console.WriteLine("seems to found the block with a share PoW Value. -> Pow Job Value: " + jobValue + " | Pow Share Value: " + shareValue + " | Sum of Work: " + sumOfWorkValue + " | Block Pow Value: " + targetBlockValue + " | Difficulty Pow Value: " + powDifficultyValue + "/" + targetBlockValue);
+                                                                        if (!UseProxy)
+                                                                        {
+                                                                            if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                                                                ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                                                                calculCompute.ToString("F0") +
+                                                                                "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, CertificateConnection, false, true))
+                                                                            {
+                                                                                DisconnectNetwork();
+                                                                                break;
+                                                                            }
+                                                                        }
+                                                                        else
+                                                                        {
+
+                                                                            if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                                                             ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                                                             calculCompute.ToString("F0") +
+                                                                             "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
+                                                                            {
+                                                                                DisconnectNetwork();
+                                                                                break;
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
                                             }
                                             else
                                             {
@@ -1253,7 +1356,7 @@ namespace Xiropht_Solo_Miner
                                 calculComputeString = calculCompute.ToString();
                                 if (calculCompute - Math.Round(calculCompute, 0) == 0) // Check if the result contains decimal places, if yes ignore it.
                                 {
-                                    
+
                                     if (calculCompute > 1 && calculCompute <= currentBlockDifficulty)
                                     {
 
@@ -1308,6 +1411,57 @@ namespace Xiropht_Solo_Miner
                                                     {
                                                         DisconnectNetwork();
                                                         break;
+                                                    }
+                                                }
+                                            }
+                                            else
+                                            {
+                                                byte[] targetBlockByte = ClassUtils.FromHexString(CurrentBlockIndication);
+                                                decimal targetBlockValue = Convert.ToDecimal(BitConverter.ToInt64(targetBlockByte, 0));
+                                                byte[] jobByte = ClassUtils.FromHexString(hashShare);
+                                                decimal jobValue = Convert.ToDecimal(BitConverter.ToInt64(jobByte, 0));
+                                                if (jobValue > 0)
+                                                {
+                                                    byte[] shareByte = ClassUtils.FromHexString(encryptedShare);
+                                                    decimal shareValue = Convert.ToDecimal(BitConverter.ToInt64(shareByte, 0));
+                                                    if (shareValue > 0)
+                                                    {
+                                                        decimal sumOfWorkValue = shareValue - jobValue;
+                                                        if (sumOfWorkValue > 0)
+                                                        {
+                                                            if (sumOfWorkValue >= targetBlockValue)
+                                                            {
+                                                                decimal powDifficultyValue = sumOfWorkValue - targetBlockValue;
+                                                                decimal approximativeEquality = Math.Abs((powDifficultyValue / targetBlockValue) * 100);
+                                                                if (approximativeEquality >= 100 && approximativeEquality <= 100.01m) // Max acceptance on the Blockchain
+                                                                {
+                                                                    Console.WriteLine("seems to found the block with a share PoW Value. -> Pow Job Value: " + jobValue + " | Pow Share Value: " + shareValue + " | Sum of Work: " + sumOfWorkValue + " | Block Pow Value: " + targetBlockValue + " | Difficulty Pow Value: " + powDifficultyValue + "/" + targetBlockValue);
+                                                                    if (!UseProxy)
+                                                                    {
+                                                                        if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                                                            ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                                                            calculCompute.ToString("F0") +
+                                                                            "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, CertificateConnection, false, true))
+                                                                        {
+                                                                            DisconnectNetwork();
+                                                                            break;
+                                                                        }
+                                                                    }
+                                                                    else
+                                                                    {
+
+                                                                        if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                                                         ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                                                         calculCompute.ToString("F0") +
+                                                                         "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
+                                                                        {
+                                                                            DisconnectNetwork();
+                                                                            break;
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
                                                     }
                                                 }
                                             }
