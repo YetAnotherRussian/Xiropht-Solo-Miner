@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Xiropht_Connector_All.Seed;
 using Xiropht_Connector_All.Setting;
 using Xiropht_Connector_All.SoloMining;
+using Xiropht_Connector_All.Utils;
 
 namespace Xiropht_Solo_Miner
 {
@@ -82,6 +84,14 @@ namespace Xiropht_Solo_Miner
         public static List<int> TotalMiningHashrateRound = new List<int>();
         public static float TotalHashrate;
         public static int ThreadMiningPriority;
+
+        private static byte[] CurrentAesKeyBytes;
+        private static byte[] CurrentAesIvBytes;
+        public static int CurrentRoundAesRound;
+        public static int CurrentRoundAesSize;
+        public static string CurrentRoundAesKey;
+        public static int CurrentRoundXorKey;
+        public static string CurrentJobKeyEncryption;
 
         /// <summary>
         /// Wallet mining.
@@ -799,6 +809,35 @@ namespace Xiropht_Solo_Miner
                                 var incrementProxyRange = minProxyStart / TotalThreadMining;
                                 var previousProxyMaxRange = minRange;
 
+                                int idMethod = 0;
+                                if (ListeMiningMethodName.Count >= 1)
+                                {
+                                    for (int i = 0; i < ListeMiningMethodName.Count; i++)
+                                    {
+                                        if (i < ListeMiningMethodName.Count)
+                                        {
+                                            if (ListeMiningMethodName[i] == CurrentBlockMethod)
+                                            {
+                                                idMethod = i;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                var splitMethod = ListeMiningMethodContent[idMethod].Split(new[] { "#" }, StringSplitOptions.None);
+
+                                CurrentRoundAesRound = int.Parse(splitMethod[0]);
+                                CurrentRoundAesSize = int.Parse(splitMethod[1]);
+                                CurrentRoundAesKey = splitMethod[2];
+                                CurrentRoundXorKey = int.Parse(splitMethod[3]);
+
+                                using (var pdb = new PasswordDeriveBytes(CurrentBlockKey, Encoding.UTF8.GetBytes(CurrentRoundAesKey)))
+                                {
+                                    CurrentAesKeyBytes = pdb.GetBytes(CurrentRoundAesSize / 8);
+                                    CurrentAesIvBytes = pdb.GetBytes(CurrentRoundAesSize / 8);
+                                }
+
+
                                 cts = new CancellationTokenSource();
                                 ThreadMining = null;
                                 ThreadMining = new Thread[TotalThreadMining];
@@ -1013,43 +1052,11 @@ namespace Xiropht_Solo_Miner
                 minRange = 2;
             }
 
-            int idMethod = 0;
-            if (ListeMiningMethodName.Count >= 1)
-            {
-                for (int i = 0; i < ListeMiningMethodName.Count; i++)
-                {
-                    if (i < ListeMiningMethodName.Count)
-                    {
-                        if (ListeMiningMethodName[i] == CurrentBlockMethod)
-                        {
-                            idMethod = i;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                idMethod = 0;
-            }
             while (ListeMiningMethodName.Count == 0)
             {
                 ClassConsole.WriteLine("No method content received, waiting to receive them before..", 2);
                 Thread.Sleep(1000);
             }
-            while (ListeMiningMethodContent.Count < idMethod)
-            {
-                ClassConsole.WriteLine(
-                     "The method content of: " + ListeMiningMethodName[idMethod] + " is not yet received.", 2);
-                Thread.Sleep(1000);
-            }
-
-            Console.WriteLine("Thread: " + idThread + " Method used for mining block: " + ListeMiningMethodName[idMethod] + " min range:" + minRange + " max range:" + maxRange, 2);
-            var splitMethod = ListeMiningMethodContent[idMethod].Split(new[] { "#" }, StringSplitOptions.None);
-
-            int roundMethod = int.Parse(splitMethod[0]);
-            int roundSize = int.Parse(splitMethod[1]);
-            string roundKey = splitMethod[2];
-            int keyXorMethod = int.Parse(splitMethod[3]);
 
             var currentBlockId = CurrentBlockId;
             var currentBlockTimestamp = CurrentBlockTimestampCreate;
@@ -1058,6 +1065,9 @@ namespace Xiropht_Solo_Miner
 
             var currentBlockDifficultyLength =  currentBlockDifficulty.ToString("F0").Length;
 
+            Console.WriteLine("Thread: " + idThread + " min range:" + minRange + " max range:" + maxRange, 2);
+
+            Console.WriteLine("Current Mining Method: " + CurrentBlockMethod + " = AES ROUND: " + CurrentRoundAesRound + " AES SIZE: " + CurrentRoundAesSize + " AES BYTE KEY: " + CurrentRoundAesKey + " XOR KEY: " + CurrentRoundXorKey);
 
             while (CanMining)
             {
@@ -1098,102 +1108,96 @@ namespace Xiropht_Solo_Miner
                                     string encryptedShare = calcul;
 
 
-                                    encryptedShare = ClassUtils.StringToHex(encryptedShare + CurrentBlockTimestampCreate);
-                                    encryptedShare = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Xor, encryptedShare, "" + keyXorMethod, roundSize, null);
-                                    for (int i = 0; i < roundMethod; i++)
+                                    encryptedShare = MakeEncryptedShare(encryptedShare, idThread);
+
+                                    if (encryptedShare != ClassAlgoErrorEnumeration.AlgoError)
                                     {
-                                        encryptedShare = ClassAlgo.GetEncryptedResult(CurrentBlockAlgorithm, encryptedShare, CurrentBlockKey, roundSize, Encoding.UTF8.GetBytes(roundKey));
-                                    }
-                                    encryptedShare = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Xor, encryptedShare, "" + keyXorMethod, roundSize, null);
-                                    encryptedShare = ClassAlgo.GetEncryptedResult(CurrentBlockAlgorithm, encryptedShare, CurrentBlockKey, roundSize, Encoding.UTF8.GetBytes(roundKey));
+                                        string hashShare = ClassUtils.GenerateSHA512(encryptedShare);
 
-                                    encryptedShare = ClassUtils.GenerateSHA512(encryptedShare);
+                                        TotalMiningHashrateRound[idThread]++;
+                                        if (!CanMining)
+                                        {
+                                            return;
+                                        }
 
-                                    string hashShare = ClassUtils.GenerateSHA512(encryptedShare);
-
-                                    TotalMiningHashrateRound[idThread]++;
-                                    if (!CanMining)
-                                    {
-                                        return;
-                                    }
-
-                                    if (!ProxyWantShare)
-                                    {
-
-
-                                        if (hashShare == CurrentBlockIndication)
+                                        if (!ProxyWantShare)
                                         {
 
-                                            ClassConsole.WriteLine("Share for unlock the block seems to be found, submit it: " + calcul + " \n", 1);
 
-
-                                            if (!UseProxy)
+                                            if (hashShare == CurrentBlockIndication)
                                             {
-                                                if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                    ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                                    calculCompute.ToString("F0") +
-                                                    "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, CertificateConnection, false, true))
+
+                                                ClassConsole.WriteLine("Share for unlock the block seems to be found, submit it: " + calcul + " \n", 1);
+
+
+                                                if (!UseProxy)
                                                 {
-                                                    DisconnectNetwork();
-                                                    break;
+                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                                        ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                                        calculCompute.ToString("F0") +
+                                                        "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, CertificateConnection, false, true))
+                                                    {
+                                                        DisconnectNetwork();
+                                                        break;
+                                                    }
+                                                }
+                                                else
+                                                {
+
+                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                                     ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                                     calculCompute.ToString("F0") +
+                                                     "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
+                                                    {
+                                                        DisconnectNetwork();
+                                                        break;
+                                                    }
                                                 }
                                             }
                                             else
                                             {
-
-                                                if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                 ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                                 calculCompute.ToString("F0") +
-                                                 "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
+                                                byte[] targetBlockByte = ClassUtils.FromHexString(CurrentBlockIndication);
+                                                decimal targetBlockValue = Convert.ToDecimal(BitConverter.ToInt64(targetBlockByte, 0));
+                                                byte[] jobByte = ClassUtils.FromHexString(hashShare);
+                                                decimal jobValue = Convert.ToDecimal(BitConverter.ToInt64(jobByte, 0));
+                                                if (jobValue > 0)
                                                 {
-                                                    DisconnectNetwork();
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        else
-                                        {
-                                            byte[] targetBlockByte = ClassUtils.FromHexString(CurrentBlockIndication);
-                                            decimal targetBlockValue = Convert.ToDecimal(BitConverter.ToInt64(targetBlockByte, 0));
-                                            byte[] jobByte = ClassUtils.FromHexString(hashShare);
-                                            decimal jobValue = Convert.ToDecimal(BitConverter.ToInt64(jobByte, 0));
-                                            if (jobValue > 0)
-                                            {
-                                                byte[] shareByte = ClassUtils.FromHexString(encryptedShare);
-                                                decimal shareValue = Convert.ToDecimal(BitConverter.ToInt64(shareByte, 0));
-                                                if (shareValue > 0)
-                                                {
-                                                    decimal sumOfWorkValue = shareValue - jobValue;
-                                                    if (sumOfWorkValue > 0)
+                                                    byte[] shareByte = ClassUtils.FromHexString(encryptedShare);
+                                                    decimal shareValue = Convert.ToDecimal(BitConverter.ToInt64(shareByte, 0));
+                                                    if (shareValue > 0)
                                                     {
-                                                        if (sumOfWorkValue >= targetBlockValue)
+                                                        decimal sumOfWorkValue = shareValue - jobValue;
+                                                        if (sumOfWorkValue > 0)
                                                         {
-                                                            decimal powDifficultyValue = sumOfWorkValue - targetBlockValue;
-                                                            decimal approximativeEquality = Math.Abs((powDifficultyValue / targetBlockValue) * 100);
-                                                            if (approximativeEquality >= 100 && approximativeEquality <= 100.01m) // Max acceptance on the Blockchain
+                                                            if (sumOfWorkValue >= targetBlockValue)
                                                             {
-                                                                Console.WriteLine("seems to found the block with a share PoW Value. -> Pow Job Value: " + jobValue + " | Pow Share Value: " + shareValue + " | Sum of Work: " + sumOfWorkValue + " | Block Pow Value: " + targetBlockValue + " | Difficulty Pow Value: " + powDifficultyValue + "/" + targetBlockValue);
-                                                                if (!UseProxy)
+                                                                decimal powDifficultyValue = sumOfWorkValue - targetBlockValue;
+                                                                decimal approximativeEquality = Math.Abs((powDifficultyValue / targetBlockValue) * 100);
+                                                                if (approximativeEquality >= 100 && approximativeEquality <= 100.01m) // Max acceptance on the Blockchain
                                                                 {
-                                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                                        ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                                                        calculCompute.ToString("F0") +
-                                                                        "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, CertificateConnection, false, true))
+                                                                    Console.WriteLine("seems to found the block with a share PoW Value. -> Pow Job Value: " + jobValue + " | Pow Share Value: " + shareValue + " | Sum of Work: " + sumOfWorkValue + " | Block Pow Value: " + targetBlockValue + " | Difficulty Pow Value: " + powDifficultyValue + "/" + targetBlockValue);
+                                                                    if (!UseProxy)
                                                                     {
-                                                                        DisconnectNetwork();
-                                                                        break;
+                                                                        if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                                                            ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                                                            calculCompute.ToString("F0") +
+                                                                            "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, CertificateConnection, false, true))
+                                                                        {
+                                                                            DisconnectNetwork();
+                                                                            break;
+                                                                        }
                                                                     }
-                                                                }
-                                                                else
-                                                                {
-
-                                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                                     ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                                                     calculCompute.ToString("F0") +
-                                                                     "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
+                                                                    else
                                                                     {
-                                                                        DisconnectNetwork();
-                                                                        break;
+
+                                                                        if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                                                         ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                                                         calculCompute.ToString("F0") +
+                                                                         "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
+                                                                        {
+                                                                            DisconnectNetwork();
+                                                                            break;
+                                                                        }
                                                                     }
                                                                 }
                                                             }
@@ -1202,19 +1206,18 @@ namespace Xiropht_Solo_Miner
                                                 }
                                             }
                                         }
-                                    }
-                                    else
-                                    {
-                                        if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                                              ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                                                              calculCompute.ToString("F0") +
-                                                                              "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
+                                        else
                                         {
-                                            DisconnectNetwork();
-                                            break;
+                                            if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                                                                  ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                                                                  calculCompute.ToString("F0") +
+                                                                                  "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
+                                            {
+                                                DisconnectNetwork();
+                                                break;
+                                            }
                                         }
                                     }
-
                                 }
                                 else // Test the calculation reverted.
                                 {
@@ -1228,21 +1231,137 @@ namespace Xiropht_Solo_Miner
                                         if (calculCompute > 1 && calculCompute <= currentBlockDifficulty)
                                         {
 
-
                                             string encryptedShare = calcul;
 
-
-                                            encryptedShare = ClassUtils.StringToHex(encryptedShare + CurrentBlockTimestampCreate);
-                                            encryptedShare = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Xor, encryptedShare, "" + keyXorMethod, roundSize, null);
-                                            for (int i = 0; i < roundMethod; i++)
+                                            encryptedShare = MakeEncryptedShare(encryptedShare, idThread);
+                                            if (encryptedShare != ClassAlgoErrorEnumeration.AlgoError)
                                             {
-                                                encryptedShare = ClassAlgo.GetEncryptedResult(CurrentBlockAlgorithm, encryptedShare, CurrentBlockKey, roundSize, Encoding.UTF8.GetBytes(roundKey));
+                                                string hashShare = ClassUtils.GenerateSHA512(encryptedShare);
+
+                                                TotalMiningHashrateRound[idThread]++;
+                                                if (!CanMining)
+                                                {
+                                                    return;
+                                                }
+
+                                                if (!ProxyWantShare)
+                                                {
+                                                    if (hashShare == CurrentBlockIndication)
+                                                    {
+
+                                                        ClassConsole.WriteLine("Share for unlock the block seems to be found, submit it: " + calcul + " \n", 1);
+
+
+                                                        if (!UseProxy)
+                                                        {
+                                                            if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                                                ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                                                calculCompute.ToString("F0") +
+                                                                "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, CertificateConnection, false, true))
+                                                            {
+                                                                DisconnectNetwork();
+                                                                break;
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                                             ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                                             calculCompute.ToString("F0") +
+                                                             "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
+                                                            {
+                                                                DisconnectNetwork();
+                                                                break;
+                                                            }
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        byte[] targetBlockByte = ClassUtils.FromHexString(CurrentBlockIndication);
+                                                        decimal targetBlockValue = Convert.ToDecimal(BitConverter.ToInt64(targetBlockByte, 0));
+                                                        byte[] jobByte = ClassUtils.FromHexString(hashShare);
+                                                        decimal jobValue = Convert.ToDecimal(BitConverter.ToInt64(jobByte, 0));
+                                                        if (jobValue > 0)
+                                                        {
+                                                            byte[] shareByte = ClassUtils.FromHexString(encryptedShare);
+                                                            decimal shareValue = Convert.ToDecimal(BitConverter.ToInt64(shareByte, 0));
+                                                            if (shareValue > 0)
+                                                            {
+                                                                decimal sumOfWorkValue = shareValue - jobValue;
+                                                                if (sumOfWorkValue > 0)
+                                                                {
+                                                                    if (sumOfWorkValue >= targetBlockValue)
+                                                                    {
+                                                                        decimal powDifficultyValue = sumOfWorkValue - targetBlockValue;
+                                                                        decimal approximativeEquality = Math.Abs((powDifficultyValue / targetBlockValue) * 100);
+                                                                        if (approximativeEquality >= 100 && approximativeEquality <= 100.01m) // Max acceptance on the Blockchain
+                                                                        {
+                                                                            Console.WriteLine("seems to found the block with a share PoW Value. -> Pow Job Value: " + jobValue + " | Pow Share Value: " + shareValue + " | Sum of Work: " + sumOfWorkValue + " | Block Pow Value: " + targetBlockValue + " | Difficulty Pow Value: " + powDifficultyValue + "/" + targetBlockValue);
+                                                                            if (!UseProxy)
+                                                                            {
+                                                                                if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                                                                    ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                                                                    calculCompute.ToString("F0") +
+                                                                                    "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, CertificateConnection, false, true))
+                                                                                {
+                                                                                    DisconnectNetwork();
+                                                                                    break;
+                                                                                }
+                                                                            }
+                                                                            else
+                                                                            {
+
+                                                                                if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                                                                 ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                                                                 calculCompute.ToString("F0") +
+                                                                                 "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
+                                                                                {
+                                                                                    DisconnectNetwork();
+                                                                                    break;
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
+                                                    ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
+                                                    calculCompute.ToString("F0") +
+                                                    "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
+                                                    {
+                                                        DisconnectNetwork();
+                                                        break;
+                                                    }
+                                                }
                                             }
+                                        }
+                                    }
+                                }
+                            }
+                            else // Test the calculation reverted.
+                            {
+                                calcul = secondNumber + " " + ClassUtils.randomOperatorCalculation[k] + " " + firstNumber;
+                                calculCompute = ClassUtils.ComputeCalculation(secondNumber, ClassUtils.randomOperatorCalculation[k], firstNumber);
+                                calculComputeString = calculCompute.ToString();
+                                if (calculCompute - Math.Round(calculCompute, 0) == 0) // Check if the result contains decimal places, if yes ignore it.
+                                {
 
-                                            encryptedShare = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Xor, encryptedShare, "" + keyXorMethod, roundSize, null);
-                                            encryptedShare = ClassAlgo.GetEncryptedResult(CurrentBlockAlgorithm, encryptedShare, CurrentBlockKey, roundSize, Encoding.UTF8.GetBytes(roundKey));
+                                    if (calculCompute > 1 && calculCompute <= currentBlockDifficulty)
+                                    {
 
-                                            encryptedShare = ClassUtils.GenerateSHA512(encryptedShare);
+
+                                        string encryptedShare = calcul;
+
+
+                                        encryptedShare = MakeEncryptedShare(encryptedShare, idThread);
+
+                                        if (encryptedShare != ClassAlgoErrorEnumeration.AlgoError)
+                                        {
                                             string hashShare = ClassUtils.GenerateSHA512(encryptedShare);
 
                                             TotalMiningHashrateRound[idThread]++;
@@ -1348,137 +1467,6 @@ namespace Xiropht_Solo_Miner
                                         }
                                     }
                                 }
-                            }
-                            else // Test the calculation reverted.
-                            {
-                                calcul = secondNumber + " " + ClassUtils.randomOperatorCalculation[k] + " " + firstNumber;
-                                calculCompute = ClassUtils.ComputeCalculation(secondNumber, ClassUtils.randomOperatorCalculation[k], firstNumber);
-                                calculComputeString = calculCompute.ToString();
-                                if (calculCompute - Math.Round(calculCompute, 0) == 0) // Check if the result contains decimal places, if yes ignore it.
-                                {
-
-                                    if (calculCompute > 1 && calculCompute <= currentBlockDifficulty)
-                                    {
-
-
-                                        string encryptedShare = calcul;
-
-
-                                        encryptedShare = ClassUtils.StringToHex(encryptedShare + CurrentBlockTimestampCreate);
-                                        encryptedShare = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Xor, encryptedShare, "" + keyXorMethod, roundSize, null);
-                                        for (int i = 0; i < roundMethod; i++)
-                                        {
-                                            encryptedShare = ClassAlgo.GetEncryptedResult(CurrentBlockAlgorithm, encryptedShare, CurrentBlockKey, roundSize, Encoding.UTF8.GetBytes(roundKey));
-                                        }
-
-                                        encryptedShare = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Xor, encryptedShare, "" + keyXorMethod, roundSize, null);
-                                        encryptedShare = ClassAlgo.GetEncryptedResult(CurrentBlockAlgorithm, encryptedShare, CurrentBlockKey, roundSize, Encoding.UTF8.GetBytes(roundKey));
-
-                                        encryptedShare = ClassUtils.GenerateSHA512(encryptedShare);
-                                        string hashShare = ClassUtils.GenerateSHA512(encryptedShare);
-
-                                        TotalMiningHashrateRound[idThread]++;
-                                        if (!CanMining)
-                                        {
-                                            return;
-                                        }
-
-                                        if (!ProxyWantShare)
-                                        {
-                                            if (hashShare == CurrentBlockIndication)
-                                            {
-
-                                                ClassConsole.WriteLine("Share for unlock the block seems to be found, submit it: " + calcul + " \n", 1);
-
-
-                                                if (!UseProxy)
-                                                {
-                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                        ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                                        calculCompute.ToString("F0") +
-                                                        "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, CertificateConnection, false, true))
-                                                    {
-                                                        DisconnectNetwork();
-                                                        break;
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                     ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                                     calculCompute.ToString("F0") +
-                                                     "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
-                                                    {
-                                                        DisconnectNetwork();
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                            else
-                                            {
-                                                byte[] targetBlockByte = ClassUtils.FromHexString(CurrentBlockIndication);
-                                                decimal targetBlockValue = Convert.ToDecimal(BitConverter.ToInt64(targetBlockByte, 0));
-                                                byte[] jobByte = ClassUtils.FromHexString(hashShare);
-                                                decimal jobValue = Convert.ToDecimal(BitConverter.ToInt64(jobByte, 0));
-                                                if (jobValue > 0)
-                                                {
-                                                    byte[] shareByte = ClassUtils.FromHexString(encryptedShare);
-                                                    decimal shareValue = Convert.ToDecimal(BitConverter.ToInt64(shareByte, 0));
-                                                    if (shareValue > 0)
-                                                    {
-                                                        decimal sumOfWorkValue = shareValue - jobValue;
-                                                        if (sumOfWorkValue > 0)
-                                                        {
-                                                            if (sumOfWorkValue >= targetBlockValue)
-                                                            {
-                                                                decimal powDifficultyValue = sumOfWorkValue - targetBlockValue;
-                                                                decimal approximativeEquality = Math.Abs((powDifficultyValue / targetBlockValue) * 100);
-                                                                if (approximativeEquality >= 100 && approximativeEquality <= 100.01m) // Max acceptance on the Blockchain
-                                                                {
-                                                                    Console.WriteLine("seems to found the block with a share PoW Value. -> Pow Job Value: " + jobValue + " | Pow Share Value: " + shareValue + " | Sum of Work: " + sumOfWorkValue + " | Block Pow Value: " + targetBlockValue + " | Difficulty Pow Value: " + powDifficultyValue + "/" + targetBlockValue);
-                                                                    if (!UseProxy)
-                                                                    {
-                                                                        if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                                            ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                                                            calculCompute.ToString("F0") +
-                                                                            "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, CertificateConnection, false, true))
-                                                                        {
-                                                                            DisconnectNetwork();
-                                                                            break;
-                                                                        }
-                                                                    }
-                                                                    else
-                                                                    {
-
-                                                                        if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                                         ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                                                         calculCompute.ToString("F0") +
-                                                                         "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
-                                                                        {
-                                                                            DisconnectNetwork();
-                                                                            break;
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        else
-                                        {
-                                            if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                            ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                            calculCompute.ToString("F0") +
-                                            "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
-                                            {
-                                                DisconnectNetwork();
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
 
                             }
                         }
@@ -1492,6 +1480,45 @@ namespace Xiropht_Solo_Miner
                 }
             }
 
+        }
+
+
+        /// <summary>
+        /// Encrypt math calculation with the current mining method
+        /// </summary>
+        /// <param name="calculation"></param>
+        /// <returns></returns>
+        private static string MakeEncryptedShare(string calculation, int idThread)
+        {
+            try
+            {
+                string encryptedShare = ClassUtils.StringToHex(calculation + CurrentBlockTimestampCreate);
+
+                // Static XOR Encryption -> Key updated from the current mining method.
+                encryptedShare = ClassAlgo.EncryptXorShare(encryptedShare, CurrentRoundXorKey.ToString());
+
+                // Dynamic AES Encryption -> Size and Key's from the current mining method and the current block key encryption.
+                for (int i = 0; i < CurrentRoundAesRound; i++)
+                {
+                    encryptedShare = ClassAlgo.EncryptAesShare(encryptedShare, CurrentAesKeyBytes, CurrentAesIvBytes, CurrentRoundAesSize);
+                }
+
+                // Static XOR Encryption -> Key from the current mining method
+                encryptedShare = ClassAlgo.EncryptXorShare(encryptedShare, CurrentRoundXorKey.ToString());
+
+                // Static AES Encryption -> Size and Key's from the current mining method.
+                encryptedShare = ClassAlgo.EncryptAesShare(encryptedShare, CurrentAesKeyBytes, CurrentAesIvBytes, CurrentRoundAesSize);
+
+                // Generate SHA512 HASH for the share.
+                encryptedShare = ClassUtils.GenerateSHA512(encryptedShare);
+
+
+                return encryptedShare;
+            }
+            catch
+            {
+                return ClassAlgoErrorEnumeration.AlgoError;
+            }
         }
 
         private static bool CalculateHashrateEnabled;
