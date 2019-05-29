@@ -1,6 +1,10 @@
 # Xiropht-Solo-Miner
 <h2>Official Xiropht Solo Miner.</h2>
 
+**Current math generator system can be improved easily**
+
+**External developers have the freedom to edit this miner tool for increase his performances**
+
 **In production, we suggest to compile in Release Mode for disable log files and debug mode.**
 
 <h2>Windows:</h2>
@@ -41,7 +45,6 @@ Hashrate test [Updated 13/02/2019]:
 
 For more informations about how work the Xiropht Mining System, please check out the Wiki: https://github.com/XIROPHT/Xiropht-Solo-Miner/wiki
 
-**Current math generator way can be improved easily**
 
 **Developers:**
 
