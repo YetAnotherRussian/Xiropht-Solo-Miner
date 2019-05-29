@@ -3,7 +3,7 @@
 
 **Current math generator system can be improved easily**
 
-**External developers have the freedom to edit this miner tool for increase his performances**
+**External developers have the freedom to edit this solo mining tool for increase his performances**
 
 **In production, we suggest to compile in Release Mode for disable log files and debug mode.**
 
