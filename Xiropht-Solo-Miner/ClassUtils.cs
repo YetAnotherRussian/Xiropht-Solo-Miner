@@ -174,6 +174,8 @@ namespace Xiropht_Solo_Miner
         {
             string number = "0";
             StringBuilder numberBuilder = new StringBuilder();
+
+
             while (decimal.Parse(number) > maxRange || decimal.Parse(number) <= 1 || number.Length > currentBlockDifficultyLength)
             {
                 var randomJobSize = GetRandomBetweenJob(minRange, maxRange).ToString("F0").Length;
@@ -208,7 +210,9 @@ namespace Xiropht_Solo_Miner
                 }
                 number = numberBuilder.ToString();
                 numberBuilder.Clear();
+
                 return number;
+
             }
             return number;
         }
