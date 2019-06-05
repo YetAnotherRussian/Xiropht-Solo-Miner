@@ -13,6 +13,7 @@ namespace Xiropht_Solo_Miner
 
         private static readonly char[] HexArray = "0123456789ABCDEF".ToCharArray();
 
+        private static RNGCryptoServiceProvider Generator = new RNGCryptoServiceProvider();
 
         /// <summary>
         ///     Get a random number in integer size.
@@ -22,22 +23,21 @@ namespace Xiropht_Solo_Miner
         /// <returns></returns>
         public static int GetRandomBetween(int minimumValue, int maximumValue)
         {
-            using (RNGCryptoServiceProvider Generator = new RNGCryptoServiceProvider())
-            {
-                var randomNumber = new byte[sizeof(int)];
 
-                Generator.GetBytes(randomNumber);
+            var randomNumber = new byte[sizeof(int)];
 
-                var asciiValueOfRandomCharacter = Convert.ToDouble(randomNumber[0]);
+            Generator.GetBytes(randomNumber);
 
-                var multiplier = Math.Max(0, asciiValueOfRandomCharacter / 255d - 0.00000000001d);
+            var asciiValueOfRandomCharacter = Convert.ToDouble(randomNumber[0]);
 
-                var range = maximumValue - minimumValue + 1;
+            var multiplier = Math.Max(0, asciiValueOfRandomCharacter / 255d - 0.00000000001d);
 
-                var randomValueInRange = Math.Floor(multiplier * range);
+            var range = maximumValue - minimumValue + 1;
 
-                return (int)(minimumValue + randomValueInRange);
-            }
+            var randomValueInRange = Math.Floor(multiplier * range);
+
+            return (int)(minimumValue + randomValueInRange);
+
         }
 
         /// <summary>
@@ -48,21 +48,20 @@ namespace Xiropht_Solo_Miner
         /// <returns></returns>
         public static decimal GetRandomBetweenJob(decimal minimumValue, decimal maximumValue)
         {
-            using (RNGCryptoServiceProvider Generator = new RNGCryptoServiceProvider())
-            {
-                var randomNumber = new byte[sizeof(decimal)];
 
-                Generator.GetBytes(randomNumber);
+            var randomNumber = new byte[sizeof(decimal)];
 
-                var asciiValueOfRandomCharacter = (decimal)Convert.ToDouble(randomNumber[0]);
+            Generator.GetBytes(randomNumber);
 
-                var multiplier = (decimal)Math.Max(0, asciiValueOfRandomCharacter / 255m - 0.00000000001m);
+            var asciiValueOfRandomCharacter = (decimal)Convert.ToDouble(randomNumber[0]);
 
-                var range = maximumValue - minimumValue + 1;
+            var multiplier = (decimal)Math.Max(0, asciiValueOfRandomCharacter / 255m - 0.00000000001m);
 
-                var randomValueInRange = (decimal)Math.Floor(multiplier * range);
-                return (minimumValue + randomValueInRange);
-            }
+            var range = maximumValue - minimumValue + 1;
+
+            var randomValueInRange = (decimal)Math.Floor(multiplier * range);
+            return (minimumValue + randomValueInRange);
+
         }
 
         /// <summary>
@@ -178,6 +177,7 @@ namespace Xiropht_Solo_Miner
 
             while (decimal.Parse(number) > maxRange || decimal.Parse(number) <= 1 || number.Length > currentBlockDifficultyLength)
             {
+                number = "0";
                 var randomJobSize = GetRandomBetweenJob(minRange, maxRange).ToString("F0").Length;
 
                 int randomSize = GetRandomBetween(1, randomJobSize);
@@ -210,9 +210,6 @@ namespace Xiropht_Solo_Miner
                 }
                 number = numberBuilder.ToString();
                 numberBuilder.Clear();
-
-                return number;
-
             }
             return number;
         }

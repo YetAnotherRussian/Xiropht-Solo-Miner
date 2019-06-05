@@ -1158,32 +1158,6 @@ namespace Xiropht_Solo_Miner
                                                 }
                                             }
                                         }
-                                        else if (CheckMaxAcceptanceShare(encryptedShare, hashShare))
-                                        {
-                                            ClassConsole.WriteLine("Max acceptance share for unlock the block seems to be found, submit it: " + calcul + " and waiting confirmation..\n", 1);
-                                            if (!UseProxy)
-                                            {
-                                                if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                    ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                                    calculCompute.ToString("F0") +
-                                                    "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, CertificateConnection, false, true))
-                                                {
-                                                    DisconnectNetwork();
-                                                    break;
-                                                }
-                                            }
-                                            else
-                                            {
-                                                if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                 ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                                 calculCompute.ToString("F0") +
-                                                 "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
-                                                {
-                                                    DisconnectNetwork();
-                                                    break;
-                                                }
-                                            }
-                                        }
                                     }
                                 }
                                 else // Test the calculation reverted.
@@ -1214,32 +1188,6 @@ namespace Xiropht_Solo_Miner
                                                 if (hashShare == CurrentBlockIndication)
                                                 {
                                                     ClassConsole.WriteLine("Exact share for unlock the block seems to be found, submit it: " + calcul + " and waiting confirmation..\n", 1);
-                                                    if (!UseProxy)
-                                                    {
-                                                        if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                            ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                                            calculCompute.ToString("F0") +
-                                                            "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, CertificateConnection, false, true))
-                                                        {
-                                                            DisconnectNetwork();
-                                                            break;
-                                                        }
-                                                    }
-                                                    else
-                                                    {
-                                                        if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                         ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                                         calculCompute.ToString("F0") +
-                                                         "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
-                                                        {
-                                                            DisconnectNetwork();
-                                                            break;
-                                                        }
-                                                    }
-                                                }
-                                                else if (CheckMaxAcceptanceShare(encryptedShare, hashShare))
-                                                {
-                                                    ClassConsole.WriteLine("Max acceptance share for unlock the block seems to be found, submit it: " + calcul + " and waiting confirmation..\n", 1);
                                                     if (!UseProxy)
                                                     {
                                                         if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
@@ -1321,32 +1269,6 @@ namespace Xiropht_Solo_Miner
                                                     }
                                                 }
                                             }
-                                            else if (CheckMaxAcceptanceShare(encryptedShare, hashShare))
-                                            {
-                                                ClassConsole.WriteLine("Max acceptance share for unlock the block seems to be found, submit it: " + calcul + " and waiting confirmation..\n", 1);
-                                                if (!UseProxy)
-                                                {
-                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                        ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                                        calculCompute.ToString("F0") +
-                                                        "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, CertificateConnection, false, true))
-                                                    {
-                                                        DisconnectNetwork();
-                                                        break;
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
-                                                     ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
-                                                     calculCompute.ToString("F0") +
-                                                     "|" + calcul + "|" + hashShare + "|" + CurrentBlockId + "|" + Assembly.GetExecutingAssembly().GetName().Version, string.Empty, false, false))
-                                                    {
-                                                        DisconnectNetwork();
-                                                        break;
-                                                    }
-                                                }
-                                            }
                                         }
                                     }
                                 }
@@ -1401,47 +1323,6 @@ namespace Xiropht_Solo_Miner
         }
 
         /// <summary>
-        /// Check max acceptance share value in the case of the share is not the Exact Share.
-        /// </summary>
-        /// <param name="encryptedShare"></param>
-        /// <param name="hashShare"></param>
-        /// <returns></returns>
-        private static bool CheckMaxAcceptanceShare(string encryptedShare, string hashShare)
-        {
-            byte[] targetBlockByte = ClassUtils.FromHexString(CurrentBlockIndication);
-            decimal targetBlockValue = Convert.ToDecimal(BitConverter.ToInt64(targetBlockByte, 0));
-            byte[] jobByte = ClassUtils.FromHexString(hashShare);
-            decimal jobValue = Convert.ToDecimal(BitConverter.ToInt64(jobByte, 0));
-            if (jobValue > 0)
-            {
-                byte[] shareByte = ClassUtils.FromHexString(encryptedShare);
-                decimal shareValue = Convert.ToDecimal(BitConverter.ToInt64(shareByte, 0));
-                if (shareValue > 0)
-                {
-                    decimal sumOfWorkValue =  jobValue - shareValue;
-                    if (sumOfWorkValue > 0)
-                    {
-                        if (sumOfWorkValue <= targetBlockValue)
-                        {
-                            decimal difficultyValue = sumOfWorkValue - targetBlockValue;
-                            decimal approximativeEquality = Math.Abs((difficultyValue / targetBlockValue) * 100);
-                            if (Math.Round(approximativeEquality, 0) == 100) // Max acceptance on the Blockchain, will scale up or down proportionally with the difficulty.
-                            {
-                                if (approximativeEquality - 100 >= 0)
-                                {
-                                    Console.WriteLine("Max acceptance share of approvimative equality found: " + approximativeEquality);
-                                    return true;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            return false;
-        }
-
-
-        /// <summary>
         /// Calculate the hashrate of the solo miner.
         /// </summary>
         private static void CalculateHashrate()
@@ -1449,69 +1330,69 @@ namespace Xiropht_Solo_Miner
             if (!CalculateHashrateEnabled)
             {
                 CalculateHashrateEnabled = true;
-                new Thread(async () =>
-                 {
-                     var counterTime = 0;
-                     while (true)
-                     {
-                         try
-                         {
+                Task.Factory.StartNew(async () =>
+                {
+                    var counterTime = 0;
+                    while (true)
+                    {
+                        try
+                        {
 
-                             float totalRoundHashrate = 0;
+                            float totalRoundHashrate = 0;
 
 
-                             for (int i = 0; i < TotalMiningHashrateRound.Count; i++)
-                             {
-                                 if (i < TotalMiningHashrateRound.Count)
+                            for (int i = 0; i < TotalMiningHashrateRound.Count; i++)
+                            {
+                                if (i < TotalMiningHashrateRound.Count)
+                                {
+                                    totalRoundHashrate += TotalMiningHashrateRound[i];
+                                    if (counterTime >= HashrateIntervalCalculation && CanMining)
+                                    {
+                                        ClassConsole.WriteLine("Encryption Speed Thread " + i + " : " + (TotalMiningHashrateRound[i]) + " H/s", 4);
+                                    }
+                                }
+                            }
+
+
+                            TotalHashrate = totalRoundHashrate;
+
+                            for (int i = 0; i < TotalMiningHashrateRound.Count; i++)
+                            {
+                                if (i < TotalMiningHashrateRound.Count)
+                                {
+                                    TotalMiningHashrateRound[i] = 0;
+                                }
+                            }
+                            if (CanMining)
+                            {
+                                if (counterTime == HashrateIntervalCalculation)
+                                {
+                                    ClassConsole.WriteLine(TotalHashrate + " H/s > UNLOCK[" + TotalBlockAccepted + "] REFUSED[" + TotalBlockRefused + "]", 4);
+                                }
+                                if (counterTime < HashrateIntervalCalculation)
+                                {
+                                    counterTime++;
+                                }
+                                else
+                                {
+                                    counterTime = 0;
+                                }
+                                if (UseProxy) // Share hashrate information to the proxy solo miner.
                                  {
-                                     totalRoundHashrate += TotalMiningHashrateRound[i];
-                                     if (counterTime >= HashrateIntervalCalculation && CanMining)
-                                     {
-                                         ClassConsole.WriteLine("Encryption Speed Thread " + i + " : " + (TotalMiningHashrateRound[i]) + " H/s", 4);
-                                     }
-                                 }
-                             }
+                                    if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ShareHashrate + "|" + TotalHashrate, string.Empty, false, false))
+                                    {
+                                        DisconnectNetwork();
+                                    }
+                                }
+                            }
 
-
-                             TotalHashrate = totalRoundHashrate;
-
-                             for (int i = 0; i < TotalMiningHashrateRound.Count; i++)
-                             {
-                                 if (i < TotalMiningHashrateRound.Count)
-                                 {
-                                     TotalMiningHashrateRound[i] = 0;
-                                 }
-                             }
-                             if (CanMining)
-                             {
-                                 if (counterTime == HashrateIntervalCalculation)
-                                 {
-                                     ClassConsole.WriteLine(TotalHashrate + " H/s > UNLOCK[" + TotalBlockAccepted + "] REFUSED[" + TotalBlockRefused + "]", 4);
-                                 }
-                                 if (counterTime < HashrateIntervalCalculation)
-                                 {
-                                     counterTime++;
-                                 }
-                                 else
-                                 {
-                                     counterTime = 0;
-                                 }
-                                 if (UseProxy) // Share hashrate information to the proxy solo miner.
-                                 {
-                                     if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ShareHashrate + "|" + TotalHashrate, string.Empty, false, false))
-                                     {
-                                         DisconnectNetwork();
-                                     }
-                                 }
-                             }
-
-                         }
-                         catch
-                         {
-                         }
-                         Thread.Sleep(1000); // Each 1 seconds
-                     }
-                 }).Start();
+                        }
+                        catch
+                        {
+                        }
+                        await Task.Delay(1000);
+                    }
+                }).ConfigureAwait(false);
             }
         }
 
