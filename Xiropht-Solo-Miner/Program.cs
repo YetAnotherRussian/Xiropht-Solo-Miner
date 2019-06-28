@@ -161,8 +161,17 @@ namespace Xiropht_Solo_Miner
                 }
                 else
                 {
-                    ClassConsole.WriteLine("config.ini file invalid, follow instructions to restore your setting:", 2);
-                    FirstSettingConfig();
+                    ClassConsole.WriteLine("config.ini file invalid, do you want to follow instructions to setting again your config.ini file ? [Y/N]", 2);
+                    string choose = Console.ReadLine();
+                    if (choose.ToLower() == "y")
+                    {
+                        FirstSettingConfig();
+                    }
+                    else
+                    {
+                        ClassConsole.WriteLine("Close solo miner program.", 0);
+                        Process.GetCurrentProcess().Kill();
+                    }
                 }
             }
             else
@@ -341,12 +350,14 @@ namespace Xiropht_Solo_Miner
             {
                 var splitConfigContent = configContent.Split(new[] { "\n" }, StringSplitOptions.None);
 
+                bool proxyLineFound = false;
                 int totalConfigLine = 0;
                 // Check at first if the miner use a proxy.
                 foreach (var configLine in splitConfigContent)
                 {
-                    if (configLine.Contains("PROXY_ENABLE="))
+                    if (configLine.Contains("PROXY_ENABLE=") && !proxyLineFound)
                     {
+                        proxyLineFound = true;
                         if (configLine.Replace("PROXY_ENABLE=", "").ToLower() == "y")
                         {
                             UseProxy = true;
@@ -355,11 +366,19 @@ namespace Xiropht_Solo_Miner
                     }
                 }
 
+                if (proxyLineFound == false)
+                {
+                    return false;
+                }
+
                 bool walletAddressCorrected = false;
+                bool walletAddressLineFound = false;
+                bool miningThreadLineFound = false;
                 foreach (var configLine in splitConfigContent)
                 {
-                    if (configLine.Contains("WALLET_ADDRESS="))
+                    if (configLine.Contains("WALLET_ADDRESS=") && !walletAddressLineFound)
                     {
+                        walletAddressLineFound = true;
                         WalletAddress = configLine.Replace("WALLET_ADDRESS=", "");
                         if (!UseProxy)
                         {
@@ -377,17 +396,26 @@ namespace Xiropht_Solo_Miner
                         }
                         totalConfigLine++;
                     }
-                    else if (configLine.Contains("MINING_THREAD="))
+                    if (configLine.Contains("MINING_THREAD=") && !miningThreadLineFound)
                     {
-                        TotalThreadMining = int.Parse(configLine.Replace("MINING_THREAD=", ""));
+                        miningThreadLineFound = true;
+                        if (!int.TryParse(configLine.Replace("MINING_THREAD=", ""), out TotalThreadMining))
+                        {
+                            ClassConsole.WriteLine("MINING_THREAD line contain an invalid integer value.", 3);
+                            return false;
+                        }
                         totalConfigLine++;
                     }
-                    else if (configLine.Contains("MINING_THREAD_PRIORITY="))
+                    if (configLine.Contains("MINING_THREAD_PRIORITY="))
                     {
-                        ThreadMiningPriority = int.Parse(configLine.Replace("MINING_THREAD_PRIORITY=", ""));
+                        if (!int.TryParse(configLine.Replace("MINING_THREAD_PRIORITY=", ""), out ThreadMiningPriority))
+                        {
+                            ClassConsole.WriteLine("MINING_THREAD_PRIORITY= line contain an invalid integer value.", 3);
+                            return false;
+                        }
                         totalConfigLine++;
                     }
-                    else if (configLine.Contains("MINING_THREAD_SPREAD_JOB="))
+                    if (configLine.Contains("MINING_THREAD_SPREAD_JOB="))
                     {
                         if (configLine.Replace("MINING_THREAD_SPREAD_JOB=", "").ToLower() == "y")
                         {
@@ -395,44 +423,36 @@ namespace Xiropht_Solo_Miner
                         }
                         totalConfigLine++;
                     }
-                    else if (configLine.Contains("PROXY_PORT="))
+                    if (configLine.Contains("PROXY_PORT="))
                     {
-                        ProxyPort = int.Parse(configLine.Replace("PROXY_PORT=", ""));
+                        if (!int.TryParse(configLine.Replace("PROXY_PORT=", ""), out ProxyPort))
+                        {
+                            ClassConsole.WriteLine("PROXY_PORT= line contain an invalid integer value.", 3);
+                            return false;
+                        }
                         totalConfigLine++;
                     }
-                    else if (configLine.Contains("PROXY_HOST="))
+                    if (configLine.Contains("PROXY_HOST="))
                     {
                         ProxyHost = configLine.Replace("PROXY_HOST=", "");
                         totalConfigLine++;
                     }
-                    else if (configLine.Contains("MINING_DIFFICULTY="))
+                    if (configLine.Contains("MINING_PERCENT_DIFFICULTY_START="))
                     {
-                        MiningPercentDifficultyEnd = int.Parse(configLine.Replace("MINING_DIFFICULTY=", ""));
+                        if (!int.TryParse(configLine.Replace("MINING_PERCENT_DIFFICULTY_START=", ""), out MiningPercentDifficultyStart))
+                        {
+                            ClassConsole.WriteLine("MINING_PERCENT_DIFFICULTY_START= line contain an invalid integer value.", 3);
+                            return false;
+                        }
                         totalConfigLine++;
                     }
-                    else if (configLine.Contains("MINING_POSITION_DIFFICULTY="))
+                    if (configLine.Contains("MINING_PERCENT_DIFFICULTY_END="))
                     {
-                        MiningPercentDifficultyStart = int.Parse(configLine.Replace("MINING_POSITION_DIFFICULTY=", ""));
-                        totalConfigLine++;
-                    }
-                    else if (configLine.Contains("MINING_POURCENT_DIFFICULTY_START="))
-                    {
-                        MiningPercentDifficultyStart = int.Parse(configLine.Replace("MINING_POURCENT_DIFFICULTY_START=", ""));
-                        totalConfigLine++;
-                    }
-                    else if (configLine.Contains("MINING_POURCENT_DIFFICULTY_END="))
-                    {
-                        MiningPercentDifficultyEnd = int.Parse(configLine.Replace("MINING_POURCENT_DIFFICULTY_END=", ""));
-                        totalConfigLine++;
-                    }
-                    else if (configLine.Contains("MINING_PERCENT_DIFFICULTY_START="))
-                    {
-                        MiningPercentDifficultyStart = int.Parse(configLine.Replace("MINING_PERCENT_DIFFICULTY_START=", ""));
-                        totalConfigLine++;
-                    }
-                    else if (configLine.Contains("MINING_PERCENT_DIFFICULTY_END="))
-                    {
-                        MiningPercentDifficultyEnd = int.Parse(configLine.Replace("MINING_PERCENT_DIFFICULTY_END=", ""));
+                        if (!int.TryParse(configLine.Replace("MINING_PERCENT_DIFFICULTY_END=", ""), out MiningPercentDifficultyEnd))
+                        {
+                            ClassConsole.WriteLine("MINING_PERCENT_DIFFICULTY_END= line contain an invalid integer value.", 3);
+                            return false;
+                        }
                         totalConfigLine++;
                     }
                 }
