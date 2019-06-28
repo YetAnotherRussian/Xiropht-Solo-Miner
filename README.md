@@ -46,6 +46,8 @@ Hashrate test [Updated 13/02/2019]:
 For more informations about how work the Xiropht Mining System, please check out the Wiki: https://github.com/XIROPHT/Xiropht-Solo-Miner/wiki
 
 
+**Newtonsoft.Json library is used since version 0.7.3.3R:** https://github.com/JamesNK/Newtonsoft.Json
+
 **Developers:**
 
 - Xiropht (Sam Segura)
