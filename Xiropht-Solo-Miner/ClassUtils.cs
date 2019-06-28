@@ -143,26 +143,46 @@ namespace Xiropht_Solo_Miner
         public static decimal ComputeCalculation(string firstNumber, string operatorCalculation, string secondNumber)
         {
             decimal calculCompute = 0;
-            switch(operatorCalculation)
+            try
             {
-                case "+":
-                    calculCompute = decimal.Parse(firstNumber) + decimal.Parse(secondNumber);
-                    break;
-                case "-":
-                    calculCompute = decimal.Parse(firstNumber) - decimal.Parse(secondNumber);
-                    break;
-                case "*":
-                    calculCompute = decimal.Parse(firstNumber) * decimal.Parse(secondNumber);
-                    break;
-                case "%":
-                    calculCompute = decimal.Parse(firstNumber) % decimal.Parse(secondNumber);
-                    break;
-                case "/":
-                    calculCompute = decimal.Parse(firstNumber) / decimal.Parse(secondNumber);
-                    break;
+                switch (operatorCalculation)
+                {
+                    case "+":
+                        calculCompute = decimal.Parse(firstNumber) + decimal.Parse(secondNumber);
+                        break;
+                    case "-":
+                        calculCompute = decimal.Parse(firstNumber) - decimal.Parse(secondNumber);
+                        break;
+                    case "*":
+                        calculCompute = decimal.Parse(firstNumber) * decimal.Parse(secondNumber);
+                        break;
+                    case "%":
+                        calculCompute = decimal.Parse(firstNumber) % decimal.Parse(secondNumber);
+                        break;
+                    case "/":
+                        calculCompute = decimal.Parse(firstNumber) / decimal.Parse(secondNumber);
+                        break;
+                }
+            }
+            catch
+            {
+
             }
 
             return calculCompute;
+        }
+
+        public static string RemoveSpecialCharacters(string str)
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (char c in str)
+            {
+                if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))
+                {
+                    sb.Append(c);
+                }
+            }
+            return sb.ToString();
         }
 
         /// <summary>

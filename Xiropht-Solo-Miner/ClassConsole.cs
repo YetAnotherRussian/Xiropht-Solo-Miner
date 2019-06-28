@@ -41,7 +41,7 @@ namespace Xiropht_Solo_Miner
             switch (command.ToLower())
             {
                 case "h":
-                    WriteLine(Program.TotalHashrate + " H/s > UNLOCK[" + Program.TotalBlockAccepted + "] REFUSED[" + Program.TotalBlockRefused + "]", 4);
+                    WriteLine(Program.TotalHashrate + " H/s > UNLOCKED[" + Program.TotalBlockAccepted + "] REFUSED[" + Program.TotalBlockRefused + "]", 4);
                     break;
                 case "d":
                     WriteLine("Current Block: " + Program.CurrentBlockId + " Difficulty: " + Program.CurrentBlockDifficulty);
