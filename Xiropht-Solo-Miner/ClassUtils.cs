@@ -9,7 +9,7 @@ namespace Xiropht_Solo_Miner
 
         public static string[] randomOperatorCalculation = new[] { "+", "*", "%", "-", "/" };
 
-        private static string[] randomNumberCalculation = new[] { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+        private static string[] randomNumberCalculation = new[] { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
         private static readonly char[] HexArray = "0123456789ABCDEF".ToCharArray();
 
@@ -209,10 +209,6 @@ namespace Xiropht_Solo_Miner
                         var numberRandom = randomNumberCalculation[GetRandomBetween(0, randomNumberCalculation.Length - 1)];
                         if (counter == 0)
                         {
-                            while (numberRandom == "0")
-                            {
-                                numberRandom = randomNumberCalculation[GetRandomBetween(0, randomNumberCalculation.Length - 1)];
-                            }
                             numberBuilder.Append(numberRandom);
                         }
                         else

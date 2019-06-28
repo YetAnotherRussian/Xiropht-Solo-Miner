@@ -1203,6 +1203,27 @@ namespace Xiropht_Solo_Miner
             {
 
             }
+            for(int i = 0; i < ThreadMining.Length; i++)
+            {
+                if (i < ThreadMining.Length)
+                {
+                    if (ThreadMining[i] != null)
+                    {
+                        try
+                        {
+                            if (ThreadMining[i] != null && (ThreadMining[i].IsAlive || ThreadMining[i] != null))
+                            {
+                                ThreadMining[i].Abort();
+                                GC.SuppressFinalize(ThreadMining[i]);
+                            }
+                        }
+                        catch
+                        {
+
+                        }
+                    }
+                }
+            }
             cts = new CancellationTokenSource();
         }
 
