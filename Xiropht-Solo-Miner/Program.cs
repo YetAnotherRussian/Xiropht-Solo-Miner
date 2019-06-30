@@ -637,28 +637,19 @@ namespace Xiropht_Solo_Miner
                 Thread.Sleep(ClassConnectorSetting.MaxTimeoutConnect);
                 while (true)
                 {
-
-                    if (LastPacketReceived + TimeoutPacketReceived < DateTimeOffset.Now.ToUnixTimeSeconds())
+                    if (!IsConnected || !LoginAccepted || !ObjectSeedNodeNetwork.ReturnStatus() || LastPacketReceived + TimeoutPacketReceived < DateTimeOffset.Now.ToUnixTimeSeconds())
                     {
-                        ClassConsole.WriteLine("Miner is disconnected to the network - connection timeout.", 3);
-                        DisconnectNetwork();
-                    }
-                    else
-                    {
-
-                        if (!IsConnected || !LoginAccepted || !ObjectSeedNodeNetwork.ReturnStatus())
+                        ClassConsole.WriteLine("Miner connection lost or aborted, retry to connect..", 3);
+                        StopMining();
+                        CurrentBlockId = "";
+                        CurrentBlockHash = "";
+                        while (!await StartConnectMinerAsync())
                         {
-                            ClassConsole.WriteLine("Miner connection lost or aborted, retry to connect..", 3);
-                            StopMining();
-                            CurrentBlockId = "";
-                            CurrentBlockHash = "";
-                            while (!await StartConnectMinerAsync())
-                            {
-                                ClassConsole.WriteLine("Can't connect to the proxy, retry in 5 seconds..", 3);
-                                Thread.Sleep(ClassConnectorSetting.MaxTimeoutConnect);
-                            }
+                            ClassConsole.WriteLine("Can't connect to the proxy, retry in 5 seconds..", 3);
+                            Thread.Sleep(ClassConnectorSetting.MaxTimeoutConnect);
                         }
                     }
+
                     Thread.Sleep(ThreadCheckNetworkInterval);
                 }
             });
