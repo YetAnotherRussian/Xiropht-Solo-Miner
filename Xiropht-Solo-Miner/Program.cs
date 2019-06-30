@@ -637,31 +637,26 @@ namespace Xiropht_Solo_Miner
                 Thread.Sleep(ClassConnectorSetting.MaxTimeoutConnect);
                 while (true)
                 {
-                    if (UseProxy)
+
+                    if (LastPacketReceived + TimeoutPacketReceived < DateTimeOffset.Now.ToUnixTimeSeconds())
                     {
-                        if (LastPacketReceived + TimeoutPacketReceived < DateTimeOffset.Now.ToUnixTimeSeconds())
-                        {
-                            ClassConsole.WriteLine("Miner is disconnected to the network - connection timeout.", 3);
-                            ObjectSeedNodeNetwork?.DisconnectToSeed();
-                        }
-                        else
-                        {
-                            if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveAskListBlockMethod, string.Empty, false, false))
-                            {
-                                DisconnectNetwork();
-                            }
-                        }
+                        ClassConsole.WriteLine("Miner is disconnected to the network - connection timeout.", 3);
+                        DisconnectNetwork();
                     }
-                    if (!IsConnected || !LoginAccepted || !ObjectSeedNodeNetwork.ReturnStatus())
+                    else
                     {
-                        ClassConsole.WriteLine("Miner connection lost or aborted, retry to connect..", 3);
-                        StopMining();
-                        CurrentBlockId = "";
-                        CurrentBlockHash = "";
-                        while(!await StartConnectMinerAsync())
+
+                        if (!IsConnected || !LoginAccepted || !ObjectSeedNodeNetwork.ReturnStatus())
                         {
-                            ClassConsole.WriteLine("Can't connect to the proxy, retry in 5 seconds..", 3);
-                            Thread.Sleep(ClassConnectorSetting.MaxTimeoutConnect);
+                            ClassConsole.WriteLine("Miner connection lost or aborted, retry to connect..", 3);
+                            StopMining();
+                            CurrentBlockId = "";
+                            CurrentBlockHash = "";
+                            while (!await StartConnectMinerAsync())
+                            {
+                                ClassConsole.WriteLine("Can't connect to the proxy, retry in 5 seconds..", 3);
+                                Thread.Sleep(ClassConnectorSetting.MaxTimeoutConnect);
+                            }
                         }
                     }
                     Thread.Sleep(ThreadCheckNetworkInterval);
@@ -1277,7 +1272,7 @@ namespace Xiropht_Solo_Miner
 
                         string firstNumber = string.Empty;
                         string secondNumber = string.Empty;
-                        if (ClassUtils.GetRandomBetween(0, 100) <= ClassUtils.GetRandomBetween(0, 100) || ClassUtils.GetRandomBetween(0, 100) >= decimal.Parse(ClassUtils.GenerateNumberMathCalculation(0, 100, 3)))
+                        if (ClassUtils.GetRandomBetween(0, 100) > ClassUtils.GetRandomBetween(0, 100))
                         {
                             firstNumber = ClassUtils.GenerateNumberMathCalculation(minRange, maxRange, currentBlockDifficultyLength);
                         }
@@ -1287,7 +1282,7 @@ namespace Xiropht_Solo_Miner
                         }
 
 
-                        if (ClassUtils.GetRandomBetween(0, 100) >= ClassUtils.GetRandomBetween(0, 100) || ClassUtils.GetRandomBetween(0, 100) <= decimal.Parse(ClassUtils.GenerateNumberMathCalculation(0, 100, 3)))
+                        if (ClassUtils.GetRandomBetween(0, 100) > ClassUtils.GetRandomBetween(0, 100))
                         {
                             secondNumber = ClassUtils.GenerateNumberMathCalculation(minRange, maxRange, currentBlockDifficultyLength);
                         }
