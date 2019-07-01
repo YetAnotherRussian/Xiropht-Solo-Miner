@@ -9,7 +9,7 @@ namespace Xiropht_Solo_Miner
 
         public static string[] randomOperatorCalculation = new[] { "+", "*", "%", "-", "/" };
 
-        private static string[] randomNumberCalculation = new[] { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+        private static string[] randomNumberCalculation = new[] {  "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
         private static readonly char[] HexArray = "0123456789ABCDEF".ToCharArray();
 
