@@ -120,7 +120,7 @@ namespace Xiropht_Solo_Miner
             }
             AppDomain.CurrentDomain.UnhandledException += delegate (object sender, UnhandledExceptionEventArgs args2)
             {
-                var filePath = ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + "\\error_miner.txt");
+                var filePath = ConvertPath(AppDomain.CurrentDomain.BaseDirectory + "\\error_miner.txt");
                 var exception = (Exception)args2.ExceptionObject;
                 using (var writer = new StreamWriter(filePath, true))
                 {
@@ -1288,7 +1288,7 @@ namespace Xiropht_Solo_Miner
                         string firstNumber = string.Empty;
                         string secondNumber = string.Empty;
 
-                        if (ClassUtils.GetRandomBetween(0, 100) > ClassUtils.GetRandomBetween(0, 100))
+                        if (ClassUtils.GetRandomBetween(0, 100) >= ClassUtils.GetRandomBetween(0, 100))
                         {
                             firstNumber = ClassUtils.GenerateNumberMathCalculation(minRange, maxRange, currentBlockDifficultyLength);
                         }
@@ -1298,7 +1298,7 @@ namespace Xiropht_Solo_Miner
                         }
 
 
-                        if (ClassUtils.GetRandomBetween(0, 100) > ClassUtils.GetRandomBetween(0, 100))
+                        if (ClassUtils.GetRandomBetween(0, 100) >= ClassUtils.GetRandomBetween(0, 100))
                         {
                             secondNumber = ClassUtils.GenerateNumberMathCalculation(minRange, maxRange, currentBlockDifficultyLength);
                         }
@@ -1338,7 +1338,7 @@ namespace Xiropht_Solo_Miner
 
                                             if (hashShare == CurrentBlockIndication)
                                             {
-                                                ClassConsole.WriteLine("Exact share to unlock the block seems to be found, submit it: " + calcul + " and waiting confirmation..\n", 1);
+                                                ClassConsole.WriteLine("Exact share for unlock the block seems to be found, submit it: " + calcul + " and waiting confirmation..\n", 1);
                                                 if (!UseProxy)
                                                 {
                                                     if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
@@ -1361,12 +1361,21 @@ namespace Xiropht_Solo_Miner
                                                         break;
                                                     }
                                                 }
+                                                await Task.Factory.StartNew(StopMining).ConfigureAwait(false);
+                                                break;
                                             }
                                         }
                                     }
                                     else // Test the calculation reverted.
+
+
+
+
+
                                     {
                                         calcul = secondNumber + " " + ClassUtils.randomOperatorCalculation[k] + " " + firstNumber;
+
+
 
 
                                         calculCompute = ClassUtils.ComputeCalculation(secondNumber, ClassUtils.randomOperatorCalculation[k], firstNumber);
@@ -1376,7 +1385,12 @@ namespace Xiropht_Solo_Miner
                                             if (calculCompute > 1 && calculCompute <= currentBlockDifficulty)
                                             {
 
+
                                                 string encryptedShare = calcul;
+
+
+
+
 
                                                 encryptedShare = MakeEncryptedShare(encryptedShare, idThread);
                                                 if (encryptedShare != ClassAlgoErrorEnumeration.AlgoError)
@@ -1387,12 +1401,21 @@ namespace Xiropht_Solo_Miner
                                                     if (!CanMining)
                                                     {
                                                         return;
+
+
+
+
+
+
+
                                                     }
 
                                                     if (hashShare == CurrentBlockIndication)
                                                     {
-                                                        ClassConsole.WriteLine("Exact share to unlock the block seems to be found, submit it: " + calcul + " and waiting confirmation..\n", 1);
+                                                        ClassConsole.WriteLine("Exact share for unlock the block seems to be found, submit it: " + calcul + " and waiting confirmation..\n", 1);
                                                         if (!UseProxy)
+
+
                                                         {
                                                             if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
                                                                 ClassSoloMiningPacketEnumeration.SoloMiningSendPacketEnumeration.ReceiveJob + "|" + encryptedShare + "|" +
@@ -1414,11 +1437,14 @@ namespace Xiropht_Solo_Miner
                                                                 break;
                                                             }
                                                         }
+                                                        await Task.Factory.StartNew(StopMining).ConfigureAwait(false);
+                                                        break;
                                                     }
                                                 }
                                             }
                                         }
                                     }
+
                                 }
                                 else // Test the calculation reverted.
                                 {
@@ -1449,7 +1475,7 @@ namespace Xiropht_Solo_Miner
 
                                                 if (hashShare == CurrentBlockIndication)
                                                 {
-                                                    ClassConsole.WriteLine("Exact share to unlock the block seems to be found, submit it: " + calcul + " and waiting confirmation..\n", 1);
+                                                    ClassConsole.WriteLine("Exact share for unlock the block seems to be found, submit it: " + calcul + " and waiting confirmation..\n", 1);
                                                     if (!UseProxy)
                                                     {
                                                         if (!await ObjectSeedNodeNetwork.SendPacketToSeedNodeAsync(
@@ -1472,6 +1498,8 @@ namespace Xiropht_Solo_Miner
                                                             break;
                                                         }
                                                     }
+                                                    await Task.Factory.StartNew(StopMining).ConfigureAwait(false);
+                                                    break;
                                                 }
                                             }
                                         }

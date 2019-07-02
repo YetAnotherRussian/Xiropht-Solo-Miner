@@ -9,7 +9,7 @@ namespace Xiropht_Solo_Miner
 
         public static string[] randomOperatorCalculation = new[] { "+", "*", "%", "-", "/" };
 
-        private static string[] randomNumberCalculation = new[] {  "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+        private static string[] randomNumberCalculation = new[] { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
         private static readonly char[] HexArray = "0123456789ABCDEF".ToCharArray();
 
@@ -38,6 +38,24 @@ namespace Xiropht_Solo_Miner
 
             return (int)(minimumValue + randomValueInRange);
 
+        }
+
+        /// <summary>
+        /// Remove special characters
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public static string RemoveSpecialCharacters(string str)
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (char c in str)
+            {
+                if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '.' || c == '_')
+                {
+                    sb.Append(c);
+                }
+            }
+            return sb.ToString();
         }
 
         /// <summary>
@@ -172,19 +190,6 @@ namespace Xiropht_Solo_Miner
             return calculCompute;
         }
 
-        public static string RemoveSpecialCharacters(string str)
-        {
-            StringBuilder sb = new StringBuilder();
-            foreach (char c in str)
-            {
-                if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))
-                {
-                    sb.Append(c);
-                }
-            }
-            return sb.ToString();
-        }
-
         /// <summary>
         /// Return a number for complete a math calculation text.
         /// </summary>
@@ -209,6 +214,10 @@ namespace Xiropht_Solo_Miner
                         var numberRandom = randomNumberCalculation[GetRandomBetween(0, randomNumberCalculation.Length - 1)];
                         if (counter == 0)
                         {
+                            while (numberRandom == "0")
+                            {
+                                numberRandom = randomNumberCalculation[GetRandomBetween(0, randomNumberCalculation.Length - 1)];
+                            }
                             numberBuilder.Append(numberRandom);
                         }
                         else
