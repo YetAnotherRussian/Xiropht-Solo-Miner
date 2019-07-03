@@ -85,6 +85,7 @@ namespace Xiropht_Solo_Miner
         public static List<int> TotalMiningHashrateRound = new List<int>();
         public static float TotalHashrate;
         public static int ThreadMiningPriority;
+        private static bool CheckConnectionStarted;
 
         /// <summary>
         /// Encryption informations and objects.
@@ -104,7 +105,7 @@ namespace Xiropht_Solo_Miner
         private static bool IsLinux;
         private const int TotalConfigLine = 9;
         private static string MalformedPacket;
-
+        
         /// <summary>
         /// Main
         /// </summary>
@@ -625,8 +626,11 @@ namespace Xiropht_Solo_Miner
             }
             IsConnected = true;
             ListenNetwork();
-
-            CheckNetwork();
+            if (!CheckConnectionStarted)
+            {
+                CheckConnectionStarted = true;
+                CheckNetwork();
+            }
 
             return true;
         }
@@ -648,7 +652,22 @@ namespace Xiropht_Solo_Miner
                 Thread.Sleep(ClassConnectorSetting.MaxTimeoutConnect);
                 while (true)
                 {
-                    if (!IsConnected || !LoginAccepted || !ObjectSeedNodeNetwork.ReturnStatus() || LastPacketReceived + TimeoutPacketReceived < DateTimeOffset.Now.ToUnixTimeSeconds())
+                    try
+                    {
+                        if (!IsConnected || !LoginAccepted || !ObjectSeedNodeNetwork.ReturnStatus() || LastPacketReceived + TimeoutPacketReceived < DateTimeOffset.Now.ToUnixTimeSeconds())
+                        {
+                            ClassConsole.WriteLine("Miner connection lost or aborted, retry to connect..", 3);
+                            StopMining();
+                            CurrentBlockId = "";
+                            CurrentBlockHash = "";
+                            while (!await StartConnectMinerAsync())
+                            {
+                                ClassConsole.WriteLine("Can't connect to the proxy, retry in 5 seconds..", 3);
+                                Thread.Sleep(ClassConnectorSetting.MaxTimeoutConnect);
+                            }
+                        }
+                    }
+                    catch
                     {
                         ClassConsole.WriteLine("Miner connection lost or aborted, retry to connect..", 3);
                         StopMining();
@@ -659,7 +678,6 @@ namespace Xiropht_Solo_Miner
                             ClassConsole.WriteLine("Can't connect to the proxy, retry in 5 seconds..", 3);
                             Thread.Sleep(ClassConnectorSetting.MaxTimeoutConnect);
                         }
-                        break;
                     }
 
                     Thread.Sleep(ThreadCheckNetworkInterval);
@@ -675,7 +693,14 @@ namespace Xiropht_Solo_Miner
         {
             IsConnected = false;
             LoginAccepted = false;
-            ObjectSeedNodeNetwork.DisconnectToSeed();
+            try
+            {
+                ObjectSeedNodeNetwork.DisconnectToSeed();
+            }
+            catch
+            {
+
+            }
         }
 
         /// <summary>
@@ -1219,17 +1244,24 @@ namespace Xiropht_Solo_Miner
                 {
                     if (ThreadMining[i] != null)
                     {
-                        try
+                        bool error = true;
+                        while (error)
                         {
-                            if (ThreadMining[i] != null && (ThreadMining[i].IsAlive || ThreadMining[i] != null))
+                            try
                             {
-                                ThreadMining[i].Abort();
-                                GC.SuppressFinalize(ThreadMining[i]);
-                            }
-                        }
-                        catch
-                        {
+                                if (ThreadMining[i] != null && (ThreadMining[i].IsAlive || ThreadMining[i] != null))
+                                {
 
+                                    ThreadMining[i].Abort();
+                                    GC.SuppressFinalize(ThreadMining[i]);
+                                    ThreadMining[i] = null;
+                                }
+                                error = false;
+                            }
+                            catch
+                            {
+
+                            }
                         }
                     }
                 }
