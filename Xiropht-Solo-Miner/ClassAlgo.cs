@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -8,13 +7,9 @@ namespace Xiropht_Solo_Miner
 
     public class ClassAlgo
     {
-
-
-
-
         public static string EncryptAesShare(string text, byte[] aesKeyBytes, byte[] aesIvBytes, int size)
         {
-            using (var aes = new RijndaelManaged())
+            using (var aes = new AesManaged())
             {
                 aes.BlockSize = size;
                 aes.KeySize = size;
@@ -29,8 +24,6 @@ namespace Xiropht_Solo_Miner
                 return BitConverter.ToString(result);
             }
         }
-
-
 
         public static string EncryptXorShare(string text, string key)
         {

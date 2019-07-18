@@ -9,7 +9,7 @@ namespace Xiropht_Solo_Miner
 
         public static string[] randomOperatorCalculation = new[] { "+", "*", "%", "-", "/" };
 
-        private static string[] randomNumberCalculation = new[] { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+        private static string[] randomNumberCalculation = new[] { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
         private static readonly char[] HexArray = "0123456789ABCDEF".ToCharArray();
 
@@ -37,6 +37,40 @@ namespace Xiropht_Solo_Miner
             var randomValueInRange = Math.Floor(multiplier * range);
 
             return (int)(minimumValue + randomValueInRange);
+
+        }
+
+        /// <summary>
+        ///     Get a random number in integer size.
+        /// </summary>
+        /// <param name="minimumValue"></param>
+        /// <param name="maximumValue"></param>
+        /// <returns></returns>
+        public static int GetRandomBetweenMulti(int minimumValue, int maximumValue, int totalRound)
+        {
+            int randomNumberGenerated = 0;
+
+            for (int i = 0; i < totalRound; i++)
+            {
+                var randomNumber = new byte[sizeof(int)];
+
+                Generator.GetBytes(randomNumber);
+
+                var asciiValueOfRandomCharacter = Convert.ToDouble(randomNumber[0]);
+
+                var multiplier = Math.Max(0, asciiValueOfRandomCharacter / 255d - 0.00000000001d);
+
+                var range = maximumValue - minimumValue + 1;
+
+                var randomValueInRange = Math.Floor(multiplier * range);
+
+                randomNumberGenerated = (int)(minimumValue + randomValueInRange);
+                if (randomNumberGenerated < minimumValue || randomNumberGenerated > maximumValue)
+                {
+                    i--;
+                }
+            }
+            return randomNumberGenerated;
 
         }
 
@@ -235,6 +269,10 @@ namespace Xiropht_Solo_Miner
                 }
                 number = numberBuilder.ToString();
                 numberBuilder.Clear();
+                if (decimal.Parse(number) == 0)
+                {
+                    number = "0";
+                }
             }
             return number;
         }
