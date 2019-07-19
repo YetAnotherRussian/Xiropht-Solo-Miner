@@ -21,7 +21,7 @@ namespace Xiropht_Solo_Miner
         {
             try
             {
-                string randomSeedNode = ClassConnectorSetting.SeedNodeIp.ElementAt(ClassUtils.GetRandomBetween(0, ClassConnectorSetting.SeedNodeIp.Count - 1)).Key;
+                string randomSeedNode = ClassConnectorSetting.SeedNodeIp.ElementAt(ClassUtility.GetRandomBetween(0, ClassConnectorSetting.SeedNodeIp.Count - 1)).Key;
                 string request = ClassConnectorSettingEnumeration.WalletTokenType + "|" + ClassRpcWalletCommand.TokenCheckWalletAddressExist + "|" + walletAddress;
                 string result = await ProceedHttpRequest("http://" + randomSeedNode + ":" + ClassConnectorSetting.SeedNodeTokenPort + "/", request);
                 if (result == string.Empty || result == PacketNotExist)

@@ -9,21 +9,27 @@ namespace Xiropht_Solo_Miner
     {
         public static string EncryptAesShare(string text, byte[] aesKeyBytes, byte[] aesIvBytes, int size)
         {
-            using (var aes = new AesManaged())
+            using (var aes = new AesManaged
             {
-                aes.BlockSize = size;
-                aes.KeySize = size;
-                aes.Key = aesKeyBytes;
-                aes.IV = aesIvBytes;
+                BlockSize = size,
+                KeySize = size,
+                Key = aesKeyBytes,
+                IV = aesIvBytes
+            })
+            {
 
-                var encryptor = aes.CreateEncryptor();
+                using (var encryptor = aes.CreateEncryptor())
+                {
 
-                var textBytes = Encoding.UTF8.GetBytes(text);
-                var result = encryptor.TransformFinalBlock(textBytes, 0, textBytes.Length);
+                    var textBytes = Encoding.UTF8.GetBytes(text);
+                    var result = encryptor.TransformFinalBlock(textBytes, 0, textBytes.Length);
 
-                return BitConverter.ToString(result);
+                    return BitConverter.ToString(result);
+                }
             }
         }
+
+
 
         public static string EncryptXorShare(string text, string key)
         {
