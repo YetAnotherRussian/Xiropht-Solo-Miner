@@ -21,9 +21,9 @@ namespace Xiropht_Solo_Miner
         static extern IntPtr SetThreadAffinityMask(IntPtr hThread, IntPtr dwThreadAffinityMask);
 
         /// <summary>
-        /// Set affinity, use native function depending of the Operating system.
+        /// Set automatic affinity, use native function depending of the Operating system.
         /// </summary>
-        /// <param name="processorID"></param>
+        /// <param name="threadIdMining"></param>
         public static void SetAffinity(int threadIdMining)
         {
             if (Environment.OSVersion.Platform == PlatformID.Unix) // Linux/UNIX
@@ -45,7 +45,42 @@ namespace Xiropht_Solo_Miner
                     ulong cpuMask = 1UL << threadIdMining;
 
                     thread.ProcessorAffinity = (IntPtr)cpuMask;
+                    SetThreadAffinityMask((IntPtr)threadIdMining, (IntPtr)cpuMask);
+
                 }
+            }
+        }
+
+        /// <summary>
+        /// Set manual affinity, use native function depending of the Operating system.
+        /// </summary>
+        /// <param name="processorID"></param>
+        public static void SetManualAffinity(string threadAffinity)
+        {
+            try
+            {
+
+
+                ulong handle = Convert.ToUInt64(threadAffinity, 16);
+
+                if (Environment.OSVersion.Platform == PlatformID.Unix) // Linux/UNIX
+                {
+                    sched_setaffinity(0, new IntPtr(sizeof(ulong)), ref handle);
+
+                }
+                else
+                {
+
+                    Thread.BeginThreadAffinity();
+                    int threadId = GetCurrentThreadId();
+                    ProcessThread thread = Process.GetCurrentProcess().Threads.Cast<ProcessThread>().Where(t => t.Id == threadId).Single();
+                    thread.ProcessorAffinity = (IntPtr)handle;
+                    SetThreadAffinityMask((IntPtr)threadId, (IntPtr)handle);
+                }
+            }
+            catch (Exception error)
+            {
+                ClassConsole.WriteLine("Cannot enable Manual Affinity with: " + threadAffinity + " | Exception: " + error.Message, 3);
             }
         }
     }

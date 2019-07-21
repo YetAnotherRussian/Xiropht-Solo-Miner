@@ -20,7 +20,6 @@ namespace Xiropht_Solo_Miner
 
                 using (var encryptor = aes.CreateEncryptor())
                 {
-
                     var textBytes = Encoding.UTF8.GetBytes(text);
                     var result = encryptor.TransformFinalBlock(textBytes, 0, textBytes.Length);
 
@@ -40,5 +39,8 @@ namespace Xiropht_Solo_Miner
             return result.ToString();
         }
 
+
     }
+
+
 }

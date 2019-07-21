@@ -514,42 +514,50 @@ namespace Xiropht_Solo_Miner
                     {
                         configContent += line;
                     }
+                }
+                try
+                {
+                    ClassMinerConfigObject = JsonConvert.DeserializeObject<ClassMinerConfig>(configContent);
+                }
+                catch
+                {
+                    return false;
+                }
+                if (!ClassMinerConfigObject.mining_enable_proxy)
+                {
 
-                    try
+                    ClassMinerConfigObject.mining_wallet_address = ClassUtility.RemoveSpecialCharacters(ClassMinerConfigObject.mining_wallet_address);
+                    ClassConsole.WriteLine("Checking wallet address before to connect..", 4);
+                    bool walletAddressCorrected = false;
+                    bool checkWalletAddress = ClassTokenNetwork.CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address).Result;
+                    while (ClassMinerConfigObject.mining_wallet_address.Length < ClassConnectorSetting.MinWalletAddressSize || ClassMinerConfigObject.mining_wallet_address.Length > ClassConnectorSetting.MaxWalletAddressSize || !checkWalletAddress)
                     {
-                        ClassMinerConfigObject = JsonConvert.DeserializeObject<ClassMinerConfig>(configContent);
-                    }
-                    catch
-                    {
-                        return false;
-                    }
-                    if(!ClassMinerConfigObject.mining_enable_proxy)
-                    {
-
+                        Console.WriteLine("Invalid wallet address inside your config.ini file - Please, write your wallet address to start your solo mining: ");
+                        ClassMinerConfigObject.mining_wallet_address = Console.ReadLine();
                         ClassMinerConfigObject.mining_wallet_address = ClassUtility.RemoveSpecialCharacters(ClassMinerConfigObject.mining_wallet_address);
                         ClassConsole.WriteLine("Checking wallet address before to connect..", 4);
-                        bool walletAddressCorrected = false;
-                        bool checkWalletAddress = ClassTokenNetwork.CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address).Result;
-                        while (ClassMinerConfigObject.mining_wallet_address.Length < ClassConnectorSetting.MinWalletAddressSize || ClassMinerConfigObject.mining_wallet_address.Length > ClassConnectorSetting.MaxWalletAddressSize || !checkWalletAddress)
+                        walletAddressCorrected = true;
+                        checkWalletAddress = ClassTokenNetwork.CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address).Result;
+                    }
+                    if (checkWalletAddress)
+                    {
+                        ClassConsole.WriteLine("Wallet address: " + ClassMinerConfigObject.mining_wallet_address + " is valid.", 1);
+                    }
+                    if (walletAddressCorrected)
+                    {
+                        WriteMinerConfig();
+                    }
+                    else
+                    {
+                        if (!configContent.Contains("mining_enable_automatic_thread_affinity") || !configContent.Contains("mining_manual_thread_affinity"))
                         {
-                            Console.WriteLine("Invalid wallet address inside your config.ini file - Please, write your wallet address to start your solo mining: ");
-                            ClassMinerConfigObject.mining_wallet_address = Console.ReadLine();
-                            ClassMinerConfigObject.mining_wallet_address = ClassUtility.RemoveSpecialCharacters(ClassMinerConfigObject.mining_wallet_address);
-                            ClassConsole.WriteLine("Checking wallet address before to connect..", 4);
-                            walletAddressCorrected = true;
-                            checkWalletAddress = ClassTokenNetwork.CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address).Result;
-                        }
-                        if (checkWalletAddress)
-                        {
-                            ClassConsole.WriteLine("Wallet address: " + ClassMinerConfigObject.mining_wallet_address + " is valid.", 1);
-                        }
-                        if (walletAddressCorrected)
-                        {
+                            ClassConsole.WriteLine("Config.json has been updated, mining thread affinity settings are implemented, close your solo miner and edit those settings if you want.", 3);
                             WriteMinerConfig();
                         }
-                        return true;
                     }
+                    return true;
                 }
+
 
             }
             return false;
@@ -1290,9 +1298,17 @@ namespace Xiropht_Solo_Miner
         /// <param name="iThread"></param>
         private static void InitializeMiningThread(int iThread)
         {
-
-            ClassUtilityAffinity.SetAffinity(iThread);
-
+            if (ClassMinerConfigObject.mining_enable_automatic_thread_affinity && string.IsNullOrEmpty(ClassMinerConfigObject.mining_manual_thread_affinity))
+            {
+                ClassUtilityAffinity.SetAffinity(iThread);
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(ClassMinerConfigObject.mining_manual_thread_affinity))
+                {
+                    ClassUtilityAffinity.SetManualAffinity(ClassMinerConfigObject.mining_manual_thread_affinity);
+                }
+            }
             int i1 = iThread + 1;
             var splitCurrentBlockJob = CurrentBlockJob.Split(new[] { ";" }, StringSplitOptions.None);
             var minRange = decimal.Parse(splitCurrentBlockJob[0]);
@@ -1307,6 +1323,7 @@ namespace Xiropht_Solo_Miner
                 case 0:
                     Thread.CurrentThread.Priority = ThreadPriority.Lowest;
                     Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.BelowNormal;
+
                     break;
                 case 1:
                     Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
@@ -1600,10 +1617,8 @@ namespace Xiropht_Solo_Miner
             // Static AES Encryption -> Size and Key's from the current mining method.
             encryptedShare = ClassAlgo.EncryptAesShare(encryptedShare, CurrentAesKeyBytes, CurrentAesIvBytes, CurrentRoundAesSize);
 
-            // Generate SHA512 HASH for the share.
-            encryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
-
-            return encryptedShare;
+            // Generate SHA512 HASH for the share and return it.
+            return ClassUtility.GenerateSHA512(encryptedShare);
 
         }
 
