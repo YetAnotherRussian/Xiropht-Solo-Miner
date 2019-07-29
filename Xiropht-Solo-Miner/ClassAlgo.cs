@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -21,9 +22,14 @@ namespace Xiropht_Solo_Miner
                 using (var encryptor = aes.CreateEncryptor())
                 {
                     var textBytes = Encoding.UTF8.GetBytes(text);
-                    var result = encryptor.TransformFinalBlock(textBytes, 0, textBytes.Length);
-
-                    return BitConverter.ToString(result);
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        using (CryptoStream cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+                        {
+                            cs.Write(textBytes, 0, textBytes.Length);
+                        }
+                        return BitConverter.ToString(ms.ToArray());
+                    }
                 }
             }
         }
