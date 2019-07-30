@@ -20,40 +20,39 @@ namespace Xiropht_Solo_Miner
 
         public static async Task<bool> CheckWalletAddressExistAsync(string walletAddress)
         {
-            try
+            Dictionary<string, int> ListOfSeedNodesSpeed = new Dictionary<string, int>();
+            foreach (var seedNode in ClassConnectorSetting.SeedNodeIp)
             {
 
-                Dictionary<string, int> ListOfSeedNodesSpeed = new Dictionary<string, int>();
-                foreach (var seedNode in ClassConnectorSetting.SeedNodeIp)
+                try
                 {
-
-                    try
+                    int seedNodeResponseTime = -1;
+                    Task taskCheckSeedNode = Task.Run(() => seedNodeResponseTime = CheckPing.CheckPingHost(seedNode.Key, true));
+                    taskCheckSeedNode.Wait(ClassConnectorSetting.MaxPingDelay);
+                    if (seedNodeResponseTime == -1)
                     {
-                        int seedNodeResponseTime = -1;
-                        Task taskCheckSeedNode = Task.Run(() => seedNodeResponseTime = CheckPing.CheckPingHost(seedNode.Key, true));
-                        taskCheckSeedNode.Wait(ClassConnectorSetting.MaxPingDelay);
-                        if (seedNodeResponseTime == -1)
-                        {
-                            seedNodeResponseTime = ClassConnectorSetting.MaxSeedNodeTimeoutConnect;
-                        }
-                        ListOfSeedNodesSpeed.Add(seedNode.Key, seedNodeResponseTime);
-
+                        seedNodeResponseTime = ClassConnectorSetting.MaxSeedNodeTimeoutConnect;
                     }
-                    catch
-                    {
-                        ListOfSeedNodesSpeed.Add(seedNode.Key, ClassConnectorSetting.MaxSeedNodeTimeoutConnect); // Max delay.
-                    }
+                    ListOfSeedNodesSpeed.Add(seedNode.Key, seedNodeResponseTime);
 
                 }
-
-                ListOfSeedNodesSpeed = ListOfSeedNodesSpeed.OrderBy(u => u.Value).ToDictionary(z => z.Key, y => y.Value);
-
-
-                bool success = false;
-
-                foreach (var seedNode in ListOfSeedNodesSpeed)
+                catch
                 {
-                    if (!success)
+                    ListOfSeedNodesSpeed.Add(seedNode.Key, ClassConnectorSetting.MaxSeedNodeTimeoutConnect); // Max delay.
+                }
+
+            }
+
+            ListOfSeedNodesSpeed = ListOfSeedNodesSpeed.OrderBy(u => u.Value).ToDictionary(z => z.Key, y => y.Value);
+
+
+            bool success = false;
+
+            foreach (var seedNode in ListOfSeedNodesSpeed)
+            {
+                if (!success)
+                {
+                    try
                     {
                         string randomSeedNode = seedNode.Key;
                         string request = ClassConnectorSettingEnumeration.WalletTokenType + "|" + ClassRpcWalletCommand.TokenCheckWalletAddressExist + "|" + walletAddress;
@@ -77,7 +76,7 @@ namespace Xiropht_Solo_Miner
                                     }
                                     else if (splitResultCheckWalletAddress[0] == ClassRpcWalletCommand.SendTokenCheckWalletAddressValid)
                                     {
-                                        success = true;
+                                        return true;
                                     }
                                     else
                                     {
@@ -95,13 +94,13 @@ namespace Xiropht_Solo_Miner
                             }
                         }
                     }
+                    catch
+                    {
+                        success = false;
+                    }
                 }
-                return success;
             }
-            catch
-            {
-                return false;
-            }
+            return success;
         }
 
         private static async Task<string> ProceedHttpRequest(string url, string requestString)
