@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Xiropht_Connector_All.RPC;
 using Xiropht_Connector_All.Setting;
+using Xiropht_Connector_All.Utils;
 
 namespace Xiropht_Solo_Miner
 {
@@ -21,45 +22,81 @@ namespace Xiropht_Solo_Miner
         {
             try
             {
-                string randomSeedNode = ClassConnectorSetting.SeedNodeIp.ElementAt(ClassUtility.GetRandomBetween(0, ClassConnectorSetting.SeedNodeIp.Count - 1)).Key;
-                string request = ClassConnectorSettingEnumeration.WalletTokenType + "|" + ClassRpcWalletCommand.TokenCheckWalletAddressExist + "|" + walletAddress;
-                string result = await ProceedHttpRequest("http://" + randomSeedNode + ":" + ClassConnectorSetting.SeedNodeTokenPort + "/", request);
-                if (result == string.Empty || result == PacketNotExist)
+
+                Dictionary<string, int> ListOfSeedNodesSpeed = new Dictionary<string, int>();
+                foreach (var seedNode in ClassConnectorSetting.SeedNodeIp)
                 {
-                    return false;
-                }
-                else
-                {
-                    JObject resultJson = JObject.Parse(result);
-                    if (resultJson.ContainsKey(PacketResult))
+
+                    try
                     {
-                        string resultCheckWalletAddress = resultJson[PacketResult].ToString();
-                        if (resultCheckWalletAddress.Contains("|"))
+                        int seedNodeResponseTime = -1;
+                        Task taskCheckSeedNode = Task.Run(() => seedNodeResponseTime = CheckPing.CheckPingHost(seedNode.Key, true));
+                        taskCheckSeedNode.Wait(ClassConnectorSetting.MaxPingDelay);
+                        if (seedNodeResponseTime == -1)
                         {
-                            var splitResultCheckWalletAddress = resultCheckWalletAddress.Split(new[] { "|" }, StringSplitOptions.None);
-                            if (splitResultCheckWalletAddress[0] == ClassRpcWalletCommand.SendTokenCheckWalletAddressInvalid)
-                            {
-                                return false;
-                            }
-                            else if (splitResultCheckWalletAddress[0] == ClassRpcWalletCommand.SendTokenCheckWalletAddressValid)
-                            {
-                                return true;
-                            }
-                            else
-                            {
-                                return false;
-                            }
+                            seedNodeResponseTime = ClassConnectorSetting.MaxSeedNodeTimeoutConnect;
+                        }
+                        ListOfSeedNodesSpeed.Add(seedNode.Key, seedNodeResponseTime);
+
+                    }
+                    catch
+                    {
+                        ListOfSeedNodesSpeed.Add(seedNode.Key, ClassConnectorSetting.MaxSeedNodeTimeoutConnect); // Max delay.
+                    }
+
+                }
+
+                ListOfSeedNodesSpeed = ListOfSeedNodesSpeed.OrderBy(u => u.Value).ToDictionary(z => z.Key, y => y.Value);
+
+
+                bool success = false;
+
+                foreach (var seedNode in ListOfSeedNodesSpeed)
+                {
+                    if (!success)
+                    {
+                        string randomSeedNode = seedNode.Key;
+                        string request = ClassConnectorSettingEnumeration.WalletTokenType + "|" + ClassRpcWalletCommand.TokenCheckWalletAddressExist + "|" + walletAddress;
+                        string result = await ProceedHttpRequest("http://" + randomSeedNode + ":" + ClassConnectorSetting.SeedNodeTokenPort + "/", request);
+                        if (result == string.Empty || result == PacketNotExist)
+                        {
+                            success = false;
                         }
                         else
                         {
-                            return false;
+                            JObject resultJson = JObject.Parse(result);
+                            if (resultJson.ContainsKey(PacketResult))
+                            {
+                                string resultCheckWalletAddress = resultJson[PacketResult].ToString();
+                                if (resultCheckWalletAddress.Contains("|"))
+                                {
+                                    var splitResultCheckWalletAddress = resultCheckWalletAddress.Split(new[] { "|" }, StringSplitOptions.None);
+                                    if (splitResultCheckWalletAddress[0] == ClassRpcWalletCommand.SendTokenCheckWalletAddressInvalid)
+                                    {
+                                        success = false;
+                                    }
+                                    else if (splitResultCheckWalletAddress[0] == ClassRpcWalletCommand.SendTokenCheckWalletAddressValid)
+                                    {
+                                        success = true;
+                                    }
+                                    else
+                                    {
+                                        success = false;
+                                    }
+                                }
+                                else
+                                {
+                                    success = false;
+                                }
+                            }
+                            else
+                            {
+                                success = false;
+                            }
                         }
                     }
-                    else
-                    {
-                        return false;
-                    }
                 }
+                return success;
             }
             catch
             {

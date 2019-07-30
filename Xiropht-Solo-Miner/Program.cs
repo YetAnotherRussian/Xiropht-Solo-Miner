@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
@@ -100,7 +101,7 @@ namespace Xiropht_Solo_Miner
         /// Main
         /// </summary>
         /// <param name="args"></param>
-        [STAThread]
+        [MTAThread]
         public static void Main(string[] args)
         {
             Thread.CurrentThread.Name = Path.GetFileName(Environment.GetCommandLineArgs()[0]);
@@ -579,9 +580,21 @@ namespace Xiropht_Solo_Miner
         /// </summary>
         private static void InitializeMiningCache()
         {
+            ClassConsole.WriteLine("Be carefull, the mining cache feature is in beta and can use a lot of RAM, this function is not tested at 100% and need more features for probably provide more luck on mining.", 3);
+
             for (int i = 0; i < ClassMinerConfigObject.mining_thread; i++)
             {
-                DictionaryCacheMining.Add(i, new Dictionary<string, string>());
+                try
+                {
+                    if (!DictionaryCacheMining.ContainsKey(i))
+                    {
+                        DictionaryCacheMining.Add(i, new Dictionary<string, string>());
+                    }
+                }
+                catch
+                {
+
+                }
             }
         }
 
@@ -1063,7 +1076,7 @@ namespace Xiropht_Solo_Miner
                             {
                                 ClassConsole.WriteLine("Current block to mine " + splitBlockContent[0], 2);
                             }
-                            ClearMiningCache();
+
                             try
                             {
                                 if (CurrentBlockId == splitBlockContent[0].Replace("ID=", ""))
@@ -1083,6 +1096,10 @@ namespace Xiropht_Solo_Miner
                                 CurrentBlockTimestampCreate = splitBlockContent[9].Replace("TIMESTAMP=", "");
                                 CurrentBlockIndication = splitBlockContent[10].Replace("INDICATION=", "");
                                 StopMining();
+                                if (ClassMinerConfigObject.mining_enable_cache)
+                                {
+                                    ClearMiningCache();
+                                }
                                 CanMining = true;
                                 var splitCurrentBlockJob = CurrentBlockJob.Split(new[] { ";" }, StringSplitOptions.None);
                                 var minRange = decimal.Parse(splitCurrentBlockJob[0]);
@@ -1270,12 +1287,16 @@ namespace Xiropht_Solo_Miner
             {
                 try
                 {
-                    foreach(var keyCache in DictionaryCacheMining.Keys)
+                    var listKey = DictionaryCacheMining.Keys.ToList();
+                    for(int i = 0; i < listKey.Count; i++)
                     {
-                        DictionaryCacheMining[keyCache].Clear();
+                        if (i < listKey.Count)
+                        {
+                            ClassConsole.WriteLine("Clear mining cache from thread id: " + listKey[i], 5);
+                            DictionaryCacheMining[listKey[i]].Clear();
+                            DictionaryCacheMining[listKey[i]] = new Dictionary<string, string>();
+                        }
                     }
-                    DictionaryCacheMining.Clear();
-                    InitializeMiningCache();
                     error = false;
                 }
                 catch
@@ -1283,6 +1304,7 @@ namespace Xiropht_Solo_Miner
                     error = true;
                 }
             }
+            GC.Collect();
         }
 
         /// <summary>
@@ -1321,7 +1343,6 @@ namespace Xiropht_Solo_Miner
                                 {
 
                                     ThreadMining[i].Abort();
-                                    GC.SuppressFinalize(ThreadMining[i]);
                                     ThreadMining[i] = null;
                                 }
                                 error = false;
@@ -1334,10 +1355,6 @@ namespace Xiropht_Solo_Miner
                     }
                 }
             }
-            if (ClassMinerConfigObject.mining_enable_cache)
-            {
-                ClearMiningCache();
-            }
             cts = new CancellationTokenSource();
         }
 
@@ -1347,10 +1364,6 @@ namespace Xiropht_Solo_Miner
         /// <param name="iThread"></param>
         private static void InitializeMiningThread(int iThread)
         {
-            if (ClassMinerConfigObject.mining_enable_cache)
-            {
-                ClearMiningCache();
-            }
             if (ClassMinerConfigObject.mining_enable_automatic_thread_affinity && string.IsNullOrEmpty(ClassMinerConfigObject.mining_manual_thread_affinity))
             {
                 ClassUtilityAffinity.SetAffinity(iThread);
@@ -1457,9 +1470,9 @@ namespace Xiropht_Solo_Miner
 
             var currentBlockDifficultyLength = currentBlockDifficulty.ToString("F0").Length;
 
-            Console.WriteLine("Thread: " + idThread + " min range:" + minRange + " max range:" + maxRange, 2);
+            ClassConsole.WriteLine("Thread: " + idThread + " min range:" + minRange + " max range:" + maxRange + " | Host target: " + ObjectSeedNodeNetwork.ReturnCurrentSeedNodeHost(), 1);
 
-            Console.WriteLine("Current Mining Method: " + CurrentBlockMethod + " = AES ROUND: " + CurrentRoundAesRound + " AES SIZE: " + CurrentRoundAesSize + " AES BYTE KEY: " + CurrentRoundAesKey + " XOR KEY: " + CurrentRoundXorKey);
+            ClassConsole.WriteLine("Current Mining Method: " + CurrentBlockMethod + " = AES ROUND: " + CurrentRoundAesRound + " AES SIZE: " + CurrentRoundAesSize + " AES BYTE KEY: " + CurrentRoundAesKey + " XOR KEY: " + CurrentRoundXorKey, 1);
 
             while (CanMining)
             {
@@ -1478,14 +1491,21 @@ namespace Xiropht_Solo_Miner
                                 ClearMiningCache();
                             }
                         }
-                        MiningComputeProcess(idThread, minRange, maxRange, currentBlockDifficulty, currentBlockDifficultyLength);
                         if (ClassMinerConfigObject.mining_enable_cache)
                         {
                             if (DictionaryCacheMining[idThread].Count >= int.MaxValue - 1)
                             {
-                                Console.WriteLine("Mining Thread ID: " + idThread + " clear mining cache.");
-                                DictionaryCacheMining[idThread].Clear();
+                                MiningComputeProcess(idThread, minRange, maxRange, currentBlockDifficulty, currentBlockDifficultyLength, true);
                             }
+                            else
+                            {
+                                MiningComputeProcess(idThread, minRange, maxRange, currentBlockDifficulty, currentBlockDifficultyLength);
+                            }
+                        }
+                        else
+                        {
+                            MiningComputeProcess(idThread, minRange, maxRange, currentBlockDifficulty, currentBlockDifficultyLength);
+
                         }
                     }
                     catch
@@ -1496,7 +1516,7 @@ namespace Xiropht_Solo_Miner
             }
         }
 
-        private static void MiningComputeProcess(int idThread, decimal minRange, decimal maxRange, decimal currentBlockDifficulty, int currentBlockDifficultyLength)
+        private static void MiningComputeProcess(int idThread, decimal minRange, decimal maxRange, decimal currentBlockDifficulty, int currentBlockDifficultyLength, bool cacheIsFull = false)
         {
             string firstNumber = "0";
             string secondNumber = "0";
@@ -1536,7 +1556,7 @@ namespace Xiropht_Solo_Miner
                 }
             }
 
-            if (ClassMinerConfigObject.mining_enable_cache)
+            if (ClassMinerConfigObject.mining_enable_cache && !cacheIsFull)
             {
                 if (!DictionaryCacheMining[idThread].ContainsKey(firstNumber + secondNumber))
                 {

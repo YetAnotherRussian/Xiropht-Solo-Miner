@@ -28,6 +28,9 @@ namespace Xiropht_Solo_Miner
                 case 4:
                     Console.ForegroundColor = ConsoleColor.Magenta;
                     break;
+                case 5:
+                    Console.ForegroundColor = ConsoleColor.Blue;
+                    break;
             }
             Console.WriteLine(DateTime.Now + " - " + log);
         }
