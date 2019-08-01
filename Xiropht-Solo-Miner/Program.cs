@@ -54,7 +54,7 @@ namespace Xiropht_Solo_Miner
         private static ClassSeedNodeConnector ObjectSeedNodeNetwork;
         private static string CertificateConnection;
         private static bool IsConnected;
-        private static bool CanMining;
+        public static bool CanMining;
         private static bool LoginAccepted;
         public static int TotalShareAccepted;
         public static int TotalShareInvalid;
@@ -96,6 +96,7 @@ namespace Xiropht_Solo_Miner
         private const string ConfigFile = "\\config.json";
         private static ClassMinerConfig ClassMinerConfigObject;
         private static Dictionary<int, Dictionary<string, string>> DictionaryCacheMining = new Dictionary<int, Dictionary<string, string>>();
+        public static bool IsLinux;
 
         /// <summary>
         /// Main
@@ -128,6 +129,10 @@ namespace Xiropht_Solo_Miner
 
             };
 
+            if (Environment.OSVersion.Platform == PlatformID.Unix)
+            {
+                IsLinux = true;
+            }
 
             if (File.Exists(GetCurrentPathConfig(OldConfigFile)))
             {
@@ -524,14 +529,9 @@ namespace Xiropht_Solo_Miner
                         configContent += line;
                     }
                 }
-                try
-                {
+              
                     ClassMinerConfigObject = JsonConvert.DeserializeObject<ClassMinerConfig>(configContent);
-                }
-                catch
-                {
-                    return false;
-                }
+               
                 if (!ClassMinerConfigObject.mining_enable_proxy)
                 {
 
@@ -563,6 +563,20 @@ namespace Xiropht_Solo_Miner
                         WriteMinerConfig();
                     }
                     
+                    if (ClassMinerConfigObject.mining_enable_cache)
+                    {
+                        InitializeMiningCache();
+                    }
+                    return true;
+                }
+                else
+                {
+                    if (!configContent.Contains("mining_enable_automatic_thread_affinity") || !configContent.Contains("mining_manual_thread_affinity") || !configContent.Contains("mining_enable_cache"))
+                    {
+                        ClassConsole.WriteLine("Config.json has been updated, mining thread affinity, mining cache settings are implemented, close your solo miner and edit those settings if you want to enable them.", 3);
+                        WriteMinerConfig();
+                    }
+
                     if (ClassMinerConfigObject.mining_enable_cache)
                     {
                         InitializeMiningCache();
@@ -1287,14 +1301,23 @@ namespace Xiropht_Solo_Miner
             {
                 try
                 {
-                    var listKey = DictionaryCacheMining.Keys.ToList();
-                    for(int i = 0; i < listKey.Count; i++)
+                    if (!ClassMinerConfigObject.mining_thread_spread_job)
                     {
-                        if (i < listKey.Count)
+                        ClassConsole.WriteLine("Clear mining cache | total calculation cached: " + DictionaryCacheMining[0].Count.ToString("F0"), 5);
+                        DictionaryCacheMining[0].Clear();
+                        DictionaryCacheMining[0] = new Dictionary<string, string>();
+                    }
+                    else
+                    {
+                        var listKey = DictionaryCacheMining.Keys.ToList();
+                        for (int i = 0; i < listKey.Count; i++)
                         {
-                            ClassConsole.WriteLine("Clear mining cache from thread id: " + listKey[i], 5);
-                            DictionaryCacheMining[listKey[i]].Clear();
-                            DictionaryCacheMining[listKey[i]] = new Dictionary<string, string>();
+                            if (i < listKey.Count)
+                            {
+                                ClassConsole.WriteLine("Clear mining cache from thread id: " + listKey[i] + " | Total calculation cached: " + DictionaryCacheMining[listKey[i]].Count.ToString("F0"), 5);
+                                DictionaryCacheMining[listKey[i]].Clear();
+                                DictionaryCacheMining[listKey[i]] = new Dictionary<string, string>();
+                            }
                         }
                     }
                     error = false;
@@ -1474,6 +1497,8 @@ namespace Xiropht_Solo_Miner
 
             ClassConsole.WriteLine("Current Mining Method: " + CurrentBlockMethod + " = AES ROUND: " + CurrentRoundAesRound + " AES SIZE: " + CurrentRoundAesSize + " AES BYTE KEY: " + CurrentRoundAesKey + " XOR KEY: " + CurrentRoundXorKey, 1);
 
+            var currentMaxRangeLength = maxRange.ToString("F0").Length;
+
             while (CanMining)
             {
                 if (!GetCancellationMiningTaskStatus())
@@ -1493,18 +1518,23 @@ namespace Xiropht_Solo_Miner
                         }
                         if (ClassMinerConfigObject.mining_enable_cache)
                         {
-                            if (DictionaryCacheMining[idThread].Count >= int.MaxValue - 1)
+                            var idCache = idThread;
+                            if (!ClassMinerConfigObject.mining_thread_spread_job)
                             {
-                                MiningComputeProcess(idThread, minRange, maxRange, currentBlockDifficulty, currentBlockDifficultyLength, true);
+                                idCache = 0;
+                            }
+                            if (DictionaryCacheMining[idCache].Count >= int.MaxValue - 1)
+                            {
+                                MiningComputeProcess(idThread, minRange, maxRange, currentBlockDifficulty, currentBlockDifficultyLength, currentMaxRangeLength, true);
                             }
                             else
                             {
-                                MiningComputeProcess(idThread, minRange, maxRange, currentBlockDifficulty, currentBlockDifficultyLength);
+                                MiningComputeProcess(idThread, minRange, maxRange, currentBlockDifficulty, currentBlockDifficultyLength, currentMaxRangeLength);
                             }
                         }
                         else
                         {
-                            MiningComputeProcess(idThread, minRange, maxRange, currentBlockDifficulty, currentBlockDifficultyLength);
+                            MiningComputeProcess(idThread, minRange, maxRange, currentBlockDifficulty, currentBlockDifficultyLength, currentMaxRangeLength);
 
                         }
                     }
@@ -1516,8 +1546,9 @@ namespace Xiropht_Solo_Miner
             }
         }
 
-        private static void MiningComputeProcess(int idThread, decimal minRange, decimal maxRange, decimal currentBlockDifficulty, int currentBlockDifficultyLength, bool cacheIsFull = false)
+        private static void MiningComputeProcess(int idThread, decimal minRange, decimal maxRange, decimal currentBlockDifficulty, int currentBlockDifficultyLength, int currentMaxRangeLength, bool cacheIsFull = false)
         {
+
             string firstNumber = "0";
             string secondNumber = "0";
 
@@ -1525,7 +1556,7 @@ namespace Xiropht_Solo_Miner
             {
                 if (ClassUtility.GetRandom() >= ClassUtility.GetRandom())
                 {
-                    firstNumber = ClassUtility.GenerateNumberMathCalculation(minRange, maxRange, currentBlockDifficultyLength);
+                    firstNumber = ClassUtility.GenerateNumberMathCalculation(minRange, maxRange);
                 }
                 else
                 {
@@ -1542,12 +1573,12 @@ namespace Xiropht_Solo_Miner
             {
                 if (ClassUtility.GetRandom() >= ClassUtility.GetRandom())
                 {
-                    secondNumber = ClassUtility.GenerateNumberMathCalculation(minRange, maxRange, currentBlockDifficultyLength);
+
+                    secondNumber = ClassUtility.GenerateNumberMathCalculation(minRange, maxRange);
                 }
                 else
                 {
                     secondNumber = ClassUtility.GetRandomBetweenJob(minRange, maxRange).ToString("F0");
-
                 }
                 decimal tmpSecondNumber = decimal.Parse(secondNumber);
                 if (tmpSecondNumber >= 2 && tmpSecondNumber <= currentBlockDifficulty)
@@ -1558,9 +1589,14 @@ namespace Xiropht_Solo_Miner
 
             if (ClassMinerConfigObject.mining_enable_cache && !cacheIsFull)
             {
-                if (!DictionaryCacheMining[idThread].ContainsKey(firstNumber + secondNumber))
+                var idCache = idThread;
+                if (!ClassMinerConfigObject.mining_thread_spread_job)
                 {
-                    DictionaryCacheMining[idThread].Add(firstNumber + secondNumber, string.Empty);
+                    idCache = 0;
+                }
+                if (!DictionaryCacheMining[idCache].ContainsKey(firstNumber + secondNumber))
+                {
+                    DictionaryCacheMining[idCache].Add(firstNumber + secondNumber, string.Empty);
 
                     for (int k = 0; k < ClassUtility.randomOperatorCalculation.Length; k++)
                     {
@@ -1612,7 +1648,7 @@ namespace Xiropht_Solo_Miner
                                                     {
                                                         DisconnectNetwork();
                                                     }
-                                                } 
+                                                }
                                             }).ConfigureAwait(false);
                                             break;
                                         }
@@ -1623,9 +1659,9 @@ namespace Xiropht_Solo_Miner
                         }
                     }
                 }
-                if (!DictionaryCacheMining[idThread].ContainsKey(secondNumber + firstNumber))
+                if (!DictionaryCacheMining[idCache].ContainsKey(secondNumber + firstNumber))
                 {
-                    DictionaryCacheMining[idThread].Add(secondNumber + firstNumber, string.Empty);
+                    DictionaryCacheMining[idCache].Add(secondNumber + firstNumber, string.Empty);
 
                     // Test reverted
                     for (int k = 0; k < ClassUtility.randomOperatorCalculation.Length; k++)
@@ -1807,6 +1843,8 @@ namespace Xiropht_Solo_Miner
 
             }
         }
+
+
 
         private static bool GetCancellationMiningTaskStatus()
         {

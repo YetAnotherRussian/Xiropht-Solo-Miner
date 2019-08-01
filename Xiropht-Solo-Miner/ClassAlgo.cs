@@ -10,25 +10,53 @@ namespace Xiropht_Solo_Miner
     {
         public static string EncryptAesShare(string text, byte[] aesKeyBytes, byte[] aesIvBytes, int size)
         {
-            using (var aes = new AesManaged
+            if (Program.IsLinux)
             {
-                BlockSize = size,
-                KeySize = size,
-                Key = aesKeyBytes,
-                IV = aesIvBytes
-            })
-            {
-
-                using (var encryptor = aes.CreateEncryptor())
+                using (var aes = new AesCryptoServiceProvider
                 {
-                    var textBytes = Encoding.UTF8.GetBytes(text);
-                    using (MemoryStream ms = new MemoryStream())
+                    BlockSize = size,
+                    KeySize = size,
+                    Key = aesKeyBytes,
+                    IV = aesIvBytes
+                })
+                {
+
+                    using (var encryptor = aes.CreateEncryptor())
                     {
-                        using (CryptoStream cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+                        var textBytes = Encoding.UTF8.GetBytes(text);
+                        using (MemoryStream ms = new MemoryStream())
                         {
-                            cs.Write(textBytes, 0, textBytes.Length);
+                            using (CryptoStream cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+                            {
+                                cs.Write(textBytes, 0, textBytes.Length);
+                            }
+                            return BitConverter.ToString(ms.ToArray());
                         }
-                        return BitConverter.ToString(ms.ToArray());
+                    }
+                }
+            }
+            else
+            {
+                using (var aes = new AesManaged
+                {
+                    BlockSize = size,
+                    KeySize = size,
+                    Key = aesKeyBytes,
+                    IV = aesIvBytes
+                })
+                {
+
+                    using (var encryptor = aes.CreateEncryptor())
+                    {
+                        var textBytes = Encoding.UTF8.GetBytes(text);
+                        using (MemoryStream ms = new MemoryStream())
+                        {
+                            using (CryptoStream cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+                            {
+                                cs.Write(textBytes, 0, textBytes.Length);
+                            }
+                            return BitConverter.ToString(ms.ToArray());
+                        }
                     }
                 }
             }

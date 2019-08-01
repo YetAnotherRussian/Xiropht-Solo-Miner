@@ -138,7 +138,7 @@ namespace Xiropht_Solo_Miner
             {
                 if (Generator == null)
                 {
-                    Generator = new XorShiftRandom((ulong)GetRandom());
+                    Generator = new XorShiftRandom();
                 }
                 byte[] randomByteSize = new byte[sizeof(int)];
 
@@ -211,7 +211,7 @@ namespace Xiropht_Solo_Miner
             {
                 if (Generator == null)
                 {
-                    Generator = new XorShiftRandom((ulong)GetRandom());
+                    Generator = new XorShiftRandom();
                 }
                 byte[] randomByteSize = new byte[sizeof(decimal)];
 
@@ -363,22 +363,31 @@ namespace Xiropht_Solo_Miner
         /// Return a number for complete a math calculation text.
         /// </summary>
         /// <returns></returns>
-        public static string GenerateNumberMathCalculation(decimal minRange, decimal maxRange, int currentBlockDifficultyLength)
+        public static string GenerateNumberMathCalculation(decimal minRange, decimal maxRange)
         {
             string number = "0";
             StringBuilder numberBuilder = new StringBuilder();
 
 
-            var randomJobSize = GetRandomBetweenJob(minRange, maxRange).ToString("F0").Length;
-
-            int randomSize = GetRandomBetween(1, randomJobSize);
+            int randomSize = GetRandomBetween(minRange.ToString("F0").Length, maxRange.ToString("F0").Length);
             int counter = 0;
-            while (counter < randomSize)
+            while (Program.CanMining)
             {
 
                 numberBuilder.Append(randomNumberCalculation[GetRandomBetween(0, randomNumberCalculation.Length - 1)]);
-
-                counter++;
+                if (numberBuilder.ToString() == "0" && counter == 0)
+                {
+                    numberBuilder.Clear();
+                    counter = 0;
+                }
+                else
+                {
+                    counter++;
+                    if (counter == randomSize)
+                    {
+                        break;
+                    }
+                }
             }
             number = numberBuilder.ToString();
             numberBuilder.Clear();
