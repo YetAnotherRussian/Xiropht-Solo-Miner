@@ -33,7 +33,7 @@ The config.ini file of the miner is initialized after the first running.
 
 This release as been compiled into Debug Mode, because we are currently in private test.
 
-Hashrate test [Updated 13/02/2019]:
+Hashrate test [Updated 06/08/2019]:
 
 -> Raspberry PI 3 (On Raspberian OS): 4 KH/s.
 
