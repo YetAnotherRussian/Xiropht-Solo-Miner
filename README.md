@@ -24,7 +24,7 @@
 -> You can also make your own linux binary for don't have to install mono:
 
 ~~~text
-- mkbundle Xiropht-Solo-Miner.exe -o Xiropht-Solo-Miner Xiropht-Connector-All.dll --deps -z --static
+- mkbundle Xiropht-Solo-Miner.exe -o Xiropht-Solo-Miner Xiropht-Connector-All.dll Newtonsoft.Json.dll  --deps -z --static
 
 - ./Xiropht-Solo-Miner
 ~~~
@@ -35,11 +35,10 @@ This release as been compiled into Debug Mode, because we are currently in priva
 
 Hashrate test [Updated 13/02/2019]:
 
--> Raspberry PI 3 (On Raspberian OS): 1238C/s | 1157H/s | Accurate Rate 93.46%
+-> Raspberry PI 3 (On Raspberian OS): 4 KH/s.
 
--> Ryzen 7 2700x No OC (On Windows 10): 4521 C/s | 4187 H/s | Accurate Rate 92,61%
+-> Ryzen 7 2700x No OC (On Windows 10): 63 KH/s
 
--> Celeron G3930 (On Windows 10): 2150C/s | 1890H/s | Accurate Rate 91,25%
 
 <h3>Help:</h3>
 
