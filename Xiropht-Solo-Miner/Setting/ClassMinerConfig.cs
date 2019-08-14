@@ -1,4 +1,4 @@
-﻿namespace Xiropht_Solo_Miner
+﻿namespace Xiropht_Solo_Miner.Setting
 {
     public class ClassMinerConfig
     {

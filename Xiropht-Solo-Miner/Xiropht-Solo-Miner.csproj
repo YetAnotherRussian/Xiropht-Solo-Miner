@@ -62,6 +62,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -74,10 +75,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ClassAlgo.cs" />
-    <Compile Include="ClassConsole.cs" />
-    <Compile Include="ClassTokenNetwork.cs" />
-    <Compile Include="ClassUtility.cs" />
+    <Compile Include="Algo\ClassAlgo.cs" />
+    <Compile Include="ConsoleMiner\ClassConsole.cs" />
+    <Compile Include="Token\ClassTokenNetwork.cs" />
+    <Compile Include="Utility\ClassUtility.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -100,7 +101,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ClassMinerConfig.cs" />
+    <Compile Include="Setting\ClassMinerConfig.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

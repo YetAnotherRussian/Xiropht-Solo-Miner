@@ -1,11 +1,11 @@
 ﻿using System;
 
-namespace Xiropht_Solo_Miner
+namespace Xiropht_Solo_Miner.ConsoleMiner
 {
     public class ClassConsole
     {
         /// <summary>
-        /// Replace WriteLine function with forecolor system.
+        ///     Replace WriteLine function with forecolor system.
         /// </summary>
         /// <param name="log"></param>
         /// <param name="color"></param>
@@ -32,11 +32,12 @@ namespace Xiropht_Solo_Miner
                     Console.ForegroundColor = ConsoleColor.Blue;
                     break;
             }
+
             Console.WriteLine(DateTime.Now + " - " + log);
         }
 
         /// <summary>
-        /// Handle command line.
+        ///     Handle command line.
         /// </summary>
         /// <param name="command"></param>
         public static void CommandLine(string command)
@@ -44,10 +45,13 @@ namespace Xiropht_Solo_Miner
             switch (command.ToLower())
             {
                 case "h":
-                    WriteLine(Program.TotalHashrate + " H/s > UNLOCKED[" + Program.TotalBlockAccepted + "] REFUSED[" + Program.TotalBlockRefused + "]", 4);
+                    WriteLine(
+                        Program.TotalHashrate + " H/s > UNLOCKED[" + Program.TotalBlockAccepted + "] REFUSED[" +
+                        Program.TotalBlockRefused + "]", 4);
                     break;
                 case "d":
-                    WriteLine("Current Block: " + Program.CurrentBlockId + " Difficulty: " + Program.CurrentBlockDifficulty);
+                    WriteLine("Current Block: " + Program.CurrentBlockId + " Difficulty: " +
+                              Program.CurrentBlockDifficulty);
                     break;
                 case "r":
                     WriteLine("Current Range: " + Program.CurrentBlockJob.Replace(";", "|"));

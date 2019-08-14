@@ -1,17 +1,16 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 using Xiropht_Connector_All.RPC;
 using Xiropht_Connector_All.Setting;
 using Xiropht_Connector_All.Utils;
 
-namespace Xiropht_Solo_Miner
+namespace Xiropht_Solo_Miner.Token
 {
     public class ClassTokenNetwork
     {
