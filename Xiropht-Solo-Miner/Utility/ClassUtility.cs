@@ -159,7 +159,13 @@ namespace Xiropht_Solo_Miner.Utility
                 var randomValueInRange = Math.Floor(multiplier * range);
 
                 result = (int) (minimumValue + randomValueInRange);
-                if (result >= minimumValue && randomValueInRange <= maximumValue)
+                if (result >= minimumValue && result <= maximumValue)
+                {
+                    break;
+                }
+
+                result = int.Parse(GenerateNumberMathCalculation(minimumValue, maximumValue));
+                if (result >= minimumValue && result <= maximumValue)
                 {
                     break;
                 }
@@ -200,7 +206,12 @@ namespace Xiropht_Solo_Miner.Utility
                 var randomValueInRange = Math.Floor(multiplier * range);
 
                 result = (int) (minimumValue + randomValueInRange);
-                if (result >= minimumValue && randomValueInRange <= maximumValue)
+                if (result >= minimumValue && result <= maximumValue)
+                {
+                    break;
+                }
+                result = int.Parse(GenerateNumberMathCalculation(minimumValue, maximumValue));
+                if (result >= minimumValue && result <= maximumValue)
                 {
                     break;
                 }
@@ -242,7 +253,12 @@ namespace Xiropht_Solo_Miner.Utility
                 var randomValueInRange = Math.Floor(multiplier * range);
 
                 result = (minimumValue + randomValueInRange);
-                if (result >= minimumValue && randomValueInRange <= maximumValue)
+                if (result >= minimumValue && result <= maximumValue)
+                {
+                    break;
+                }
+                result = decimal.Parse(GenerateNumberMathCalculation(minimumValue, maximumValue));
+                if (result >= minimumValue && result <= maximumValue)
                 {
                     break;
                 }
