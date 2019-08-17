@@ -1340,7 +1340,6 @@ namespace Xiropht_Solo_Miner
             }
             catch
             {
-                DisconnectNetwork();
             }
         }
 
@@ -1648,7 +1647,6 @@ namespace Xiropht_Solo_Miner
                 " AES SIZE: " + CurrentRoundAesSize + " AES BYTE KEY: " + CurrentRoundAesKey + " XOR KEY: " +
                 CurrentRoundXorKey, 1);
 
-            var currentMaxRangeLength = maxRange.ToString("F0").Length;
 
             while (CanMining)
             {
@@ -1659,7 +1657,6 @@ namespace Xiropht_Solo_Miner
                         currentBlockId = CurrentBlockId;
                         currentBlockTimestamp = CurrentBlockTimestampCreate;
                         currentBlockDifficulty = decimal.Parse(CurrentBlockDifficulty);
-                        currentBlockDifficultyLength = currentBlockDifficulty.ToString("F0").Length;
                         if (ClassMinerConfigObject.mining_enable_cache)
                         {
                             ClearMiningCache();
@@ -1674,19 +1671,16 @@ namespace Xiropht_Solo_Miner
 
                             if (DictionaryCacheMining[idCache].Count >= int.MaxValue - 1)
                             {
-                                MiningComputeProcess(idThread, minRange, maxRange, currentBlockDifficulty,
-                                    currentBlockDifficultyLength, currentMaxRangeLength, true);
+                                MiningComputeProcess(idThread, minRange, maxRange, currentBlockDifficulty, true);
                             }
                             else
                             {
-                                MiningComputeProcess(idThread, minRange, maxRange, currentBlockDifficulty,
-                                    currentBlockDifficultyLength, currentMaxRangeLength);
+                                MiningComputeProcess(idThread, minRange, maxRange, currentBlockDifficulty);
                             }
                         }
                         else
                         {
-                            MiningComputeProcess(idThread, minRange, maxRange, currentBlockDifficulty,
-                                currentBlockDifficultyLength, currentMaxRangeLength);
+                            MiningComputeProcess(idThread, minRange, maxRange, currentBlockDifficulty);
                         }
                     }
                     catch
@@ -1697,37 +1691,22 @@ namespace Xiropht_Solo_Miner
         }
 
         private static void MiningComputeProcess(int idThread, decimal minRange, decimal maxRange,
-            decimal currentBlockDifficulty, int currentBlockDifficultyLength, int currentMaxRangeLength,
+            decimal currentBlockDifficulty,
             bool cacheIsFull = false)
         {
-            string firstNumber = "0";
-            string secondNumber = "0";
+            var firstNumber = ClassUtility.GetRandom() >= ClassUtility.GetRandom()
+                ? ClassUtility.GenerateNumberMathCalculation(minRange, maxRange)
+                : ClassUtility.GetRandomBetweenJob(minRange, maxRange).ToString("F0");
 
-            while (CanMining)
-            {
-                firstNumber = ClassUtility.GetRandom() >= ClassUtility.GetRandom()
-                    ? ClassUtility.GenerateNumberMathCalculation(minRange, maxRange)
-                    : ClassUtility.GetRandomBetweenJob(minRange, maxRange).ToString("F0");
 
-                decimal tmpFirstNumber = decimal.Parse(firstNumber);
-                if (tmpFirstNumber >= 2 && tmpFirstNumber <= currentBlockDifficulty)
-                {
-                    break;
-                }
-            }
 
-            while (CanMining)
-            {
-                secondNumber = ClassUtility.GetRandom() >= ClassUtility.GetRandom()
-                    ? ClassUtility.GenerateNumberMathCalculation(minRange, maxRange)
-                    : ClassUtility.GetRandomBetweenJob(minRange, maxRange).ToString("F0");
 
-                decimal tmpSecondNumber = decimal.Parse(secondNumber);
-                if (tmpSecondNumber >= 2 && tmpSecondNumber <= currentBlockDifficulty)
-                {
-                    break;
-                }
-            }
+            var secondNumber = ClassUtility.GetRandom() >= ClassUtility.GetRandom()
+                ? ClassUtility.GenerateNumberMathCalculation(minRange, maxRange)
+                : ClassUtility.GetRandomBetweenJob(minRange, maxRange).ToString("F0");
+
+
+
 
 
             if (ClassMinerConfigObject.mining_enable_cache && !cacheIsFull)
@@ -1947,6 +1926,11 @@ namespace Xiropht_Solo_Miner
                                         }
                                     }).ConfigureAwait(false);
                                 }
+                                /*else
+                                {
+                                    var result = ClassAlgo.ComputePowShare(hashShare, CurrentBlockIndication,
+                                        currentBlockDifficulty);
+                                }*/
                             }
                         }
                     }

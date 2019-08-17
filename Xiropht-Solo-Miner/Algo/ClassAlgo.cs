@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -70,7 +69,6 @@ namespace Xiropht_Solo_Miner.Algo
                 result.Append((char) ((uint) text[c] ^ (uint) key[c % key.Length]));
             return result.ToString();
         }
-
 
 
         public static byte[] HashHexToByteArray(string hex)
