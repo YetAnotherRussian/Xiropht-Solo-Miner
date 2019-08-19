@@ -1,11 +1,12 @@
 # Xiropht-Solo-Miner
 <h2>Official Xiropht Solo Miner.</h2>
 
-**Current math generator system can be improved easily**
 
-**External developers have the freedom to edit this solo mining tool for increase his performances**
+**Note: This Solo Miner is the standard miner tool of Xiropht, this is just a compatible example tool with the actual mining system who permit to other developers to improve it or to create their own miner tool.**
 
-**In production, we suggest to compile in Release Mode for disable log files and debug mode.**
+**Current math generator system can be improved easily.**
+
+**External developers have the freedom to edit this solo mining tool for increase his performance**
 
 <h2>Windows:</h2>
 
