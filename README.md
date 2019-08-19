@@ -34,11 +34,11 @@ The config.ini file of the miner is initialized after the first running.
 
 This release as been compiled into Debug Mode, because we are currently in private test.
 
-Hashrate test [Updated 06/08/2019]:
+Hashrate test [Updated 19/08/2019]:
 
--> Raspberry PI 3 (On Raspberian OS): 4 KH/s.
+-> Raspberry PI 3 (On Raspberian OS): 4 KH/s to 5,6 KH/s.
 
--> Ryzen 7 2700x No OC (On Windows 10): 63 KH/s
+-> Ryzen 7 2700x No OC (On Windows 10): 85 KH/s
 
 
 <h3>Help:</h3>
