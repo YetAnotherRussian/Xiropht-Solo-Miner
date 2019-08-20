@@ -306,21 +306,26 @@ namespace Xiropht_Solo_Miner.Utility
                     cleanGenerator = true;
                 }
 
-                if (counter == randomSize)
+                if (!cleanGenerator)
                 {
-                    if (decimal.TryParse(numberBuilder.ToString(), out var number))
+                    if (counter == randomSize)
                     {
-                        return numberBuilder.ToString();
+                        if (decimal.TryParse(numberBuilder.ToString(), out var number))
+                        {
+                            return numberBuilder.ToString();
+                        }
+
+                        cleanGenerator = true;
                     }
-
-                    cleanGenerator = true;
                 }
-
                 if (cleanGenerator)
                 {
+
+
                     numberBuilder.Clear();
                     counter = 0;
                     cleanGenerator = false;
+
                 }
             }
 
