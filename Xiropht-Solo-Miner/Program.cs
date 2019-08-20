@@ -1694,17 +1694,43 @@ namespace Xiropht_Solo_Miner
             decimal currentBlockDifficulty,
             bool cacheIsFull = false)
         {
-            var firstNumber = ClassUtility.GetRandom() >= ClassUtility.GetRandom()
-                ? ClassUtility.GenerateNumberMathCalculation(minRange, maxRange)
-                : ClassUtility.GetRandomBetweenJob(minRange, maxRange).ToString("F0");
+            string firstNumber = "0";
+            string secondNumber = "0";
 
+            while (CanMining)
+            {
+                if (ClassUtility.GetRandom() >= ClassUtility.GetRandom())
+                {
+                    firstNumber = ClassUtility.GenerateNumberMathCalculation(minRange, maxRange);
+                }
+                else
+                {
+                    firstNumber = ClassUtility.GetRandomBetweenJob(minRange, maxRange).ToString("F0");
+                }
+                decimal tmpFirstNumber = decimal.Parse(firstNumber);
+                if (tmpFirstNumber >= 2 && tmpFirstNumber <= currentBlockDifficulty)
+                {
+                    break;
+                }
+            }
 
+            while (CanMining)
+            {
+                if (ClassUtility.GetRandom() >= ClassUtility.GetRandom())
+                {
 
-
-            var secondNumber = ClassUtility.GetRandom() >= ClassUtility.GetRandom()
-                ? ClassUtility.GenerateNumberMathCalculation(minRange, maxRange)
-                : ClassUtility.GetRandomBetweenJob(minRange, maxRange).ToString("F0");
-
+                    secondNumber = ClassUtility.GenerateNumberMathCalculation(minRange, maxRange);
+                }
+                else
+                {
+                    secondNumber = ClassUtility.GetRandomBetweenJob(minRange, maxRange).ToString("F0");
+                }
+                decimal tmpSecondNumber = decimal.Parse(secondNumber);
+                if (tmpSecondNumber >= 2 && tmpSecondNumber <= currentBlockDifficulty)
+                {
+                    break;
+                }
+            }
 
 
 

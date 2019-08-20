@@ -70,7 +70,6 @@ namespace Xiropht_Solo_Miner.Algo
             return result.ToString();
         }
 
-
         public static byte[] HashHexToByteArray(string hex)
         {
             return Enumerable.Range(0, hex.Length)

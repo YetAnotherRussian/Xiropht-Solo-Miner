@@ -138,40 +138,26 @@ namespace Xiropht_Solo_Miner.Utility
         /// <returns></returns>
         public static int GetRandomBetweenSize(int minimumValue, int maximumValue)
         {
-            int result = 0;
-            while (Program.CanMining)
+
+            if (GeneratorRngSize == null)
             {
-                if (GeneratorRngSize == null)
-                {
-                    GeneratorRngSize = new RNGCryptoServiceProvider();
-                }
-
-                byte[] randomByteSize = new byte[1];
-
-                GeneratorRngSize.GetBytes(randomByteSize);
-
-                var asciiValueOfRandomCharacter = Convert.ToDouble(randomByteSize[0]);
-
-                var multiplier = Math.Max(0, asciiValueOfRandomCharacter / 255d - 0.00000000001d);
-
-                var range = maximumValue - minimumValue + 1;
-
-                var randomValueInRange = Math.Floor(multiplier * range);
-
-                result = (int) (minimumValue + randomValueInRange);
-                if (result >= minimumValue && result <= maximumValue)
-                {
-                    break;
-                }
-
-                result = int.Parse(GenerateNumberMathCalculation(minimumValue, maximumValue));
-                if (result >= minimumValue && result <= maximumValue)
-                {
-                    break;
-                }
+                GeneratorRngSize = new RNGCryptoServiceProvider();
             }
 
-            return result;
+            byte[] randomByteSize = new byte[1];
+
+            GeneratorRngSize.GetBytes(randomByteSize);
+
+            var asciiValueOfRandomCharacter = Convert.ToDouble(randomByteSize[0]);
+
+            var multiplier = Math.Max(0, asciiValueOfRandomCharacter / 255d - 0.00000000001d);
+
+            var range = maximumValue - minimumValue + 1;
+
+            var randomValueInRange = Math.Floor(multiplier * range);
+
+            return (int) (minimumValue + randomValueInRange);
+
         }
 
 
@@ -183,41 +169,26 @@ namespace Xiropht_Solo_Miner.Utility
         /// <returns></returns>
         public static int GetRandomBetween(int minimumValue, int maximumValue)
         {
-            int result = 0;
 
-            while (Program.CanMining)
+            if (GeneratorRngInteger == null)
             {
-                if (GeneratorRngInteger == null)
-                {
-                    GeneratorRngInteger = new RNGCryptoServiceProvider();
-                }
-
-                byte[] randomByteSize = new byte[sizeof(int)];
-
-                GeneratorRngInteger.GetBytes(randomByteSize);
-
-                var asciiValueOfRandomCharacter =
-                    Convert.ToDouble(randomByteSize[GetRandomBetweenSize(0, randomByteSize.Length - 1)]);
-
-                var multiplier = Math.Max(0, asciiValueOfRandomCharacter / 255d - 0.00000000001d);
-
-                var range = maximumValue - minimumValue + 1;
-
-                var randomValueInRange = Math.Floor(multiplier * range);
-
-                result = (int) (minimumValue + randomValueInRange);
-                if (result >= minimumValue && result <= maximumValue)
-                {
-                    break;
-                }
-                result = int.Parse(GenerateNumberMathCalculation(minimumValue, maximumValue));
-                if (result >= minimumValue && result <= maximumValue)
-                {
-                    break;
-                }
+                GeneratorRngInteger = new RNGCryptoServiceProvider();
             }
 
-            return result;
+            byte[] randomByteSize = new byte[sizeof(int)];
+
+            GeneratorRngInteger.GetBytes(randomByteSize);
+
+            var asciiValueOfRandomCharacter =
+                Convert.ToDouble(randomByteSize[GetRandomBetweenSize(0, randomByteSize.Length - 1)]);
+
+            var multiplier = Math.Max(0, asciiValueOfRandomCharacter / 255d - 0.00000000001d);
+
+            var range = maximumValue - minimumValue + 1;
+
+            var randomValueInRange = Math.Floor(multiplier * range);
+
+            return (int) (minimumValue + randomValueInRange);
 
         }
 
@@ -230,41 +201,27 @@ namespace Xiropht_Solo_Miner.Utility
         /// <returns></returns>
         public static decimal GetRandomBetweenJob(decimal minimumValue, decimal maximumValue)
         {
-            decimal result = 0;
 
-            while (Program.CanMining)
+            if (GeneratorRngJob == null)
             {
-                if (GeneratorRngJob == null)
-                {
-                    GeneratorRngJob = new RNGCryptoServiceProvider();
-                }
-
-                byte[] randomByteSize = new byte[sizeof(decimal)];
-
-                GeneratorRngJob.GetBytes(randomByteSize);
-
-                var asciiValueOfRandomCharacter =
-                    Convert.ToDecimal(randomByteSize[GetRandomBetweenSize(0, randomByteSize.Length - 1)]);
-
-                var multiplier = Math.Max(0, asciiValueOfRandomCharacter / 255m - 0.00000000001m);
-
-                var range = maximumValue - minimumValue + 1;
-
-                var randomValueInRange = Math.Floor(multiplier * range);
-
-                result = (minimumValue + randomValueInRange);
-                if (result >= minimumValue && result <= maximumValue)
-                {
-                    break;
-                }
-                result = decimal.Parse(GenerateNumberMathCalculation(minimumValue, maximumValue));
-                if (result >= minimumValue && result <= maximumValue)
-                {
-                    break;
-                }
+                GeneratorRngJob = new RNGCryptoServiceProvider();
             }
 
-            return result;
+            byte[] randomByteSize = new byte[sizeof(decimal)];
+
+            GeneratorRngJob.GetBytes(randomByteSize);
+
+            var asciiValueOfRandomCharacter =
+                Convert.ToDecimal(randomByteSize[GetRandomBetweenSize(0, randomByteSize.Length - 1)]);
+
+            var multiplier = Math.Max(0, asciiValueOfRandomCharacter / 255m - 0.00000000001m);
+
+            var range = maximumValue - minimumValue + 1;
+
+            var randomValueInRange = Math.Floor(multiplier * range);
+
+            return (minimumValue + randomValueInRange);
+
         }
 
         /// <summary>
@@ -353,19 +310,10 @@ namespace Xiropht_Solo_Miner.Utility
                 {
                     if (decimal.TryParse(numberBuilder.ToString(), out var number))
                     {
-                        if (number < minRange || number > maxRange)
-                        {
-                            cleanGenerator = true;
-                        }
-                        else
-                        {
-                            return numberBuilder.ToString();
-                        }
+                        return numberBuilder.ToString();
                     }
-                    else
-                    {
-                        cleanGenerator = true;
-                    }
+
+                    cleanGenerator = true;
                 }
 
                 if (cleanGenerator)
@@ -373,11 +321,6 @@ namespace Xiropht_Solo_Miner.Utility
                     numberBuilder.Clear();
                     counter = 0;
                     cleanGenerator = false;
-                }
-
-                if (!Program.CanMining)
-                {
-                    break;
                 }
             }
 
