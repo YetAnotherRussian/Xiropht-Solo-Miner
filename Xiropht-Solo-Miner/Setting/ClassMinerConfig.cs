@@ -14,5 +14,6 @@
         public string mining_proxy_host = string.Empty;
         public int mining_percent_difficulty_start;
         public int mining_percent_difficulty_end;
+        public bool mining_show_calculation_speed = false;
     }
 }

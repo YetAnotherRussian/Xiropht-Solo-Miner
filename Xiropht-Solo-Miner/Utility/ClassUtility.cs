@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -48,8 +49,8 @@ namespace Xiropht_Solo_Miner.Utility
 
                         ulong cpuMask = 1UL << threadIdMining;
 
-                        thread.ProcessorAffinity = (IntPtr) cpuMask;
-                        SetThreadAffinityMask((IntPtr) threadIdMining, (IntPtr) cpuMask);
+                        thread.ProcessorAffinity = (IntPtr)cpuMask;
+                        SetThreadAffinityMask((IntPtr)threadIdMining, (IntPtr)cpuMask);
 
                     }
                 }
@@ -83,8 +84,8 @@ namespace Xiropht_Solo_Miner.Utility
                     int threadId = GetCurrentThreadId();
                     ProcessThread thread = Process.GetCurrentProcess().Threads.Cast<ProcessThread>()
                         .Single(t => t.Id == threadId);
-                    thread.ProcessorAffinity = (IntPtr) handle;
-                    SetThreadAffinityMask((IntPtr) threadId, (IntPtr) handle);
+                    thread.ProcessorAffinity = (IntPtr)handle;
+                    SetThreadAffinityMask((IntPtr)threadId, (IntPtr)handle);
                 }
             }
             catch (Exception error)
@@ -99,9 +100,9 @@ namespace Xiropht_Solo_Miner.Utility
     {
 
         #region Math functions
-        public static string[] RandomOperatorCalculation = {"+", "*", "%", "-", "/"};
+        public static string[] RandomOperatorCalculation = { "+", "*", "%", "-", "/" };
 
-        private static char[] randomNumberCalculation = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+        private static char[] randomNumberCalculation = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
 
         [ThreadStatic] private static RNGCryptoServiceProvider GeneratorRngNormal;
@@ -148,15 +149,16 @@ namespace Xiropht_Solo_Miner.Utility
 
             GeneratorRngSize.GetBytes(randomByteSize);
 
-            var asciiValueOfRandomCharacter = Convert.ToDouble(randomByteSize[0]);
+            var asciiValueOfRandomCharacter = Convert.ToDecimal(randomByteSize[0]);
 
-            var multiplier = Math.Max(0, asciiValueOfRandomCharacter / 255d - 0.00000000001d);
+            var multiplier = Math.Max(0, asciiValueOfRandomCharacter / 255m - 0.00000000001m);
 
             var range = maximumValue - minimumValue + 1;
 
             var randomValueInRange = Math.Floor(multiplier * range);
 
-            return (int) (minimumValue + randomValueInRange);
+
+            return (int)(minimumValue + randomValueInRange);
 
         }
 
@@ -180,15 +182,16 @@ namespace Xiropht_Solo_Miner.Utility
             GeneratorRngInteger.GetBytes(randomByteSize);
 
             var asciiValueOfRandomCharacter =
-                Convert.ToDouble(randomByteSize[GetRandomBetweenSize(0, randomByteSize.Length - 1)]);
+                Convert.ToDecimal(randomByteSize[GetRandomBetweenSize(0, randomByteSize.Length - 1)]);
 
-            var multiplier = Math.Max(0, asciiValueOfRandomCharacter / 255d - 0.00000000001d);
+            var multiplier = Math.Max(0, asciiValueOfRandomCharacter / 255m - 0.00000000001m);
 
             var range = maximumValue - minimumValue + 1;
 
             var randomValueInRange = Math.Floor(multiplier * range);
 
-            return (int) (minimumValue + randomValueInRange);
+
+            return (int)(minimumValue + randomValueInRange);
 
         }
 
@@ -220,9 +223,13 @@ namespace Xiropht_Solo_Miner.Utility
 
             var randomValueInRange = Math.Floor(multiplier * range);
 
+
             return (minimumValue + randomValueInRange);
 
         }
+
+
+
 
         /// <summary>
         /// Return result from a math calculation.
@@ -231,10 +238,15 @@ namespace Xiropht_Solo_Miner.Utility
         /// <param name="operatorCalculation"></param>
         /// <param name="secondNumber"></param>
         /// <returns></returns>
-        public static decimal ComputeCalculation(string firstNumber, string operatorCalculation, string secondNumber)
+        public static decimal ComputeCalculation(decimal firstNumber, string operatorCalculation, decimal secondNumber)
         {
-            decimal number1 = decimal.Parse(firstNumber);
-            decimal number2 = decimal.Parse(secondNumber);
+            decimal number1 = firstNumber;
+            decimal number2 = secondNumber;
+            if (number1 == 0 || number2 == 0)
+            {
+                return 0;
+            }
+
             try
             {
                 switch (operatorCalculation)
@@ -242,28 +254,13 @@ namespace Xiropht_Solo_Miner.Utility
                     case "+":
                         return number1 + number2;
                     case "-":
-                        if (number1 > number2)
-                        {
-                            return number1 - number2;
-                        }
-
-                        break;
+                        return number1 - number2;
                     case "*":
                         return number1 * number2;
                     case "%":
-                        if (number2 > number1)
-                        {
-                            return number2;
-                        }
-
                         return number1 % number2;
                     case "/":
-                        if (number1 >= number2)
-                        {
-                            return number1 / number2;
-                        }
-
-                        break;
+                        return number1 / number2;
                 }
             }
             catch
@@ -277,11 +274,12 @@ namespace Xiropht_Solo_Miner.Utility
         #endregion
 
 
+
         /// <summary>
         /// Return a number for complete a math calculation text.
         /// </summary>
         /// <returns></returns>
-        public static string GenerateNumberMathCalculation(decimal minRange, decimal maxRange)
+        public static decimal GenerateNumberMathCalculation(decimal minRange, decimal maxRange)
         {
             if (numberBuilder == null)
             {
@@ -292,14 +290,18 @@ namespace Xiropht_Solo_Miner.Utility
                 numberBuilder.Clear();
             }
 
-            int randomSize = GetRandomBetween(minRange.ToString("F0").Length, maxRange.ToString("F0").Length);
+            int randomSize = GetRandomBetweenSize(minRange.ToString("F0").Length, GetRandomBetweenJob(minRange, maxRange).ToString("F0").Length);
             int counter = 0;
 
             bool cleanGenerator = false;
             while (Program.CanMining)
             {
 
-                numberBuilder.Append(randomNumberCalculation[GetRandomBetween(0, randomNumberCalculation.Length - 1)]);
+
+                    numberBuilder.Append(
+                        randomNumberCalculation[GetRandomBetween(0, randomNumberCalculation.Length - 1)]);
+                
+
                 counter++;
                 if (numberBuilder[0] == randomNumberCalculation[0])
                 {
@@ -312,16 +314,17 @@ namespace Xiropht_Solo_Miner.Utility
                     {
                         if (decimal.TryParse(numberBuilder.ToString(), out var number))
                         {
-                            return numberBuilder.ToString();
+
+                            return number;
+
                         }
 
                         cleanGenerator = true;
                     }
                 }
+
                 if (cleanGenerator)
                 {
-
-
                     numberBuilder.Clear();
                     counter = 0;
                     cleanGenerator = false;
@@ -329,7 +332,12 @@ namespace Xiropht_Solo_Miner.Utility
                 }
             }
 
-            return numberBuilder.ToString();
+            if (decimal.TryParse(numberBuilder.ToString(), out var numberResult))
+            {
+                return numberResult;
+            }
+
+            return 0;
         }
 
 
@@ -342,9 +350,7 @@ namespace Xiropht_Solo_Miner.Utility
         /// <returns></returns>
         public static string StringToHex(string hex)
         {
-            byte[] ba = Encoding.UTF8.GetBytes(hex);
-
-            return BitConverter.ToString(ba).Replace("-", "");
+            return BitConverter.ToString(Encoding.UTF8.GetBytes(hex)).Replace("-", "");
         }
 
         /// <summary>

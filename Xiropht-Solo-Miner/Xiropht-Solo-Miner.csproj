@@ -46,7 +46,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
@@ -75,7 +75,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Algo\ClassAlgo.cs" />
+    <Compile Include="Algo\ClassAlgoMining.cs" />
     <Compile Include="ConsoleMiner\ClassConsole.cs" />
     <Compile Include="Token\ClassTokenNetwork.cs" />
     <Compile Include="Utility\ClassUtility.cs" />

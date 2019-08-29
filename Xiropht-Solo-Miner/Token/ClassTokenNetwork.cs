@@ -17,9 +17,19 @@ namespace Xiropht_Solo_Miner.Token
         public const string PacketNotExist = "not_exist";
         public const string PacketResult = "result";
 
+        /// <summary>
+        /// Check if the wallet address exist on the network.
+        /// </summary>
+        /// <param name="walletAddress"></param>
+        /// <returns></returns>
         public static async Task<bool> CheckWalletAddressExistAsync(string walletAddress)
         {
-            Dictionary<string, int> ListOfSeedNodesSpeed = new Dictionary<string, int>();
+
+            if (Program.DictionaryWalletAddressCache.ContainsKey(walletAddress))
+            {
+                return true;
+            }
+            Dictionary<string, int> listOfSeedNodesSpeed = new Dictionary<string, int>();
             foreach (var seedNode in ClassConnectorSetting.SeedNodeIp)
             {
 
@@ -32,74 +42,49 @@ namespace Xiropht_Solo_Miner.Token
                     {
                         seedNodeResponseTime = ClassConnectorSetting.MaxSeedNodeTimeoutConnect;
                     }
-                    ListOfSeedNodesSpeed.Add(seedNode.Key, seedNodeResponseTime);
+                    listOfSeedNodesSpeed.Add(seedNode.Key, seedNodeResponseTime);
 
                 }
                 catch
                 {
-                    ListOfSeedNodesSpeed.Add(seedNode.Key, ClassConnectorSetting.MaxSeedNodeTimeoutConnect); // Max delay.
+                    listOfSeedNodesSpeed.Add(seedNode.Key, ClassConnectorSetting.MaxSeedNodeTimeoutConnect); // Max delay.
                 }
 
             }
 
-            ListOfSeedNodesSpeed = ListOfSeedNodesSpeed.OrderBy(u => u.Value).ToDictionary(z => z.Key, y => y.Value);
+            listOfSeedNodesSpeed = listOfSeedNodesSpeed.OrderBy(u => u.Value).ToDictionary(z => z.Key, y => y.Value);
 
-
-            bool success = false;
-
-            foreach (var seedNode in ListOfSeedNodesSpeed)
+            foreach (var seedNode in listOfSeedNodesSpeed)
             {
-                if (!success)
+                try
                 {
-                    try
+                    string randomSeedNode = seedNode.Key;
+                    string request = ClassConnectorSettingEnumeration.WalletTokenType + ClassConnectorSetting.PacketContentSeperator + ClassRpcWalletCommand.TokenCheckWalletAddressExist + ClassConnectorSetting.PacketContentSeperator + walletAddress;
+                    string result = await ProceedHttpRequest("http://" + randomSeedNode + ":" + ClassConnectorSetting.SeedNodeTokenPort + "/", request);
+                    if (result != string.Empty && result != PacketNotExist)
                     {
-                        string randomSeedNode = seedNode.Key;
-                        string request = ClassConnectorSettingEnumeration.WalletTokenType + "|" + ClassRpcWalletCommand.TokenCheckWalletAddressExist + "|" + walletAddress;
-                        string result = await ProceedHttpRequest("http://" + randomSeedNode + ":" + ClassConnectorSetting.SeedNodeTokenPort + "/", request);
-                        if (result == string.Empty || result == PacketNotExist)
+                        JObject resultJson = JObject.Parse(result);
+                        if (resultJson.ContainsKey(PacketResult))
                         {
-                            success = false;
-                        }
-                        else
-                        {
-                            JObject resultJson = JObject.Parse(result);
-                            if (resultJson.ContainsKey(PacketResult))
+                            string resultCheckWalletAddress = resultJson[PacketResult].ToString();
+                            if (resultCheckWalletAddress.Contains(ClassConnectorSetting.PacketContentSeperator))
                             {
-                                string resultCheckWalletAddress = resultJson[PacketResult].ToString();
-                                if (resultCheckWalletAddress.Contains("|"))
+                                var splitResultCheckWalletAddress = resultCheckWalletAddress.Split(new[] { ClassConnectorSetting.PacketContentSeperator }, StringSplitOptions.None);
+
+                                if (splitResultCheckWalletAddress[0] == ClassRpcWalletCommand.SendTokenCheckWalletAddressValid)
                                 {
-                                    var splitResultCheckWalletAddress = resultCheckWalletAddress.Split(new[] { "|" }, StringSplitOptions.None);
-                                    if (splitResultCheckWalletAddress[0] == ClassRpcWalletCommand.SendTokenCheckWalletAddressInvalid)
-                                    {
-                                        success = false;
-                                    }
-                                    else if (splitResultCheckWalletAddress[0] == ClassRpcWalletCommand.SendTokenCheckWalletAddressValid)
-                                    {
-                                        return true;
-                                    }
-                                    else
-                                    {
-                                        success = false;
-                                    }
-                                }
-                                else
-                                {
-                                    success = false;
+                                    Program.SaveWalletAddressCache(walletAddress);
+                                    return true;
                                 }
                             }
-                            else
-                            {
-                                success = false;
-                            }
                         }
-                    }
-                    catch
-                    {
-                        success = false;
                     }
                 }
+                catch
+                {
+                }
             }
-            return success;
+            return false;
         }
 
         private static async Task<string> ProceedHttpRequest(string url, string requestString)

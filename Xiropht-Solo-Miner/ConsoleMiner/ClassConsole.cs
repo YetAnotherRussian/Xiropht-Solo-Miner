@@ -45,9 +45,21 @@ namespace Xiropht_Solo_Miner.ConsoleMiner
             switch (command.ToLower())
             {
                 case "h":
-                    WriteLine(
-                        Program.TotalHashrate + " H/s > UNLOCKED[" + Program.TotalBlockAccepted + "] REFUSED[" +
-                        Program.TotalBlockRefused + "]", 4);
+                    if (Program.ClassMinerConfigObject.mining_show_calculation_speed)
+                    {
+                        WriteLine(
+                            Program.TotalHashrate + " H/s | " + Program.TotalCalculation + " C/s > ACCEPTED[" +
+                            Program.TotalBlockAccepted + "] REFUSED[" +
+                            Program.TotalBlockRefused + "]", 4);
+                    }
+                    else
+                    {
+                        WriteLine(
+                            Program.TotalHashrate + " H/s | ACCEPTED[" +
+                            Program.TotalBlockAccepted + "] REFUSED[" +
+                            Program.TotalBlockRefused + "]", 4);
+                    }
+
                     break;
                 case "d":
                     WriteLine("Current Block: " + Program.CurrentBlockId + " Difficulty: " +
