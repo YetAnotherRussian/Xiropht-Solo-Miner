@@ -2383,14 +2383,14 @@ namespace Xiropht_Solo_Miner
                                     if (ClassMinerConfigObject.mining_show_calculation_speed)
                                     {
                                         ClassConsole.WriteLine(
-                                            TotalHashrate + " H/s | " + TotalCalculation + " C/s  > UNLOCKED[" +
+                                            TotalHashrate + " H/s | " + TotalCalculation + " C/s  > ACCEPTED[" +
                                             TotalBlockAccepted + "] REFUSED[" +
                                             TotalBlockRefused + "]", 4);
                                     }
                                     else
                                     {
                                         ClassConsole.WriteLine(
-                                            TotalHashrate + " H/s | " +
+                                            TotalHashrate + " H/s | ACCEPTED[" +
                                             TotalBlockAccepted + "] REFUSED[" +
                                             TotalBlockRefused + "]", 4);
                                     }
