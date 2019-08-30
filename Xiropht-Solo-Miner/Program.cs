@@ -150,14 +150,11 @@ namespace Xiropht_Solo_Miner
             {
                 IsLinux = true;
             }
-
-            Task.Factory.StartNew(async () =>
-            {
                 LoadWalletAddressCache();
 
                 if (File.Exists(GetCurrentPathConfig(OldConfigFile)))
                 {
-                    if (await LoadConfig(true))
+                    if (LoadConfig(true))
                     {
                         ThreadMining = new Task[ClassMinerConfigObject.mining_thread];
                         ClassAlgoMining.CryptoStreamMining = new CryptoStream[ClassMinerConfigObject.mining_thread];
@@ -174,7 +171,7 @@ namespace Xiropht_Solo_Miner
                         }
 
                         ClassConsole.WriteLine("Connecting to the network..", 2);
-                        await StartConnectMinerAsync().ConfigureAwait(false);
+                        StartConnectMinerAsync().ConfigureAwait(false);
                     }
                     else
                     {
@@ -184,7 +181,7 @@ namespace Xiropht_Solo_Miner
                         string choose = Console.ReadLine();
                         if (choose.ToLower() == "y")
                         {
-                            await FirstSettingConfig();
+                             FirstSettingConfig();
                         }
                         else
                         {
@@ -197,7 +194,7 @@ namespace Xiropht_Solo_Miner
                 {
                     if (File.Exists(GetCurrentPathConfig(ConfigFile)))
                     {
-                        if (await LoadConfig(false))
+                        if (LoadConfig(false))
                         {
                             ThreadMining = new Task[ClassMinerConfigObject.mining_thread];
                             ClassAlgoMining.CryptoStreamMining = new CryptoStream[ClassMinerConfigObject.mining_thread];
@@ -214,7 +211,7 @@ namespace Xiropht_Solo_Miner
                             }
 
                             Console.WriteLine("Connecting to the network..");
-                            await StartConnectMinerAsync().ConfigureAwait(false);
+                            StartConnectMinerAsync().ConfigureAwait(false);
                         }
                         else
                         {
@@ -224,7 +221,7 @@ namespace Xiropht_Solo_Miner
                             string choose = Console.ReadLine();
                             if (choose.ToLower() == "y")
                             {
-                               await FirstSettingConfig();
+                               FirstSettingConfig();
                             }
                             else
                             {
@@ -235,7 +232,7 @@ namespace Xiropht_Solo_Miner
                     }
                     else
                     {
-                       await FirstSettingConfig();
+                       FirstSettingConfig();
                     }
                 }
 
@@ -243,19 +240,27 @@ namespace Xiropht_Solo_Miner
                 ClassConsole.WriteLine("Command Line: d -> show current difficulty.", 4);
                 ClassConsole.WriteLine("Command Line: r -> show current range", 4);
 
-            }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Current).ConfigureAwait(false);
+
+
 
             Console.CancelKeyPress += Console_CancelKeyPress;
 
-            var threadCommand = new Thread(delegate()
+            var threadCommand = new Thread(delegate ()
             {
                 while (true)
                 {
-                    StringBuilder input = new StringBuilder();
-                    var key = Console.ReadKey(true);
-                    input.Append(key.KeyChar);
-                    ClassConsole.CommandLine(input.ToString());
-                    input.Clear();
+                    try
+                    {
+                        StringBuilder input = new StringBuilder();
+                        var key = Console.ReadKey(true);
+                        input.Append(key.KeyChar);
+                        ClassConsole.CommandLine(input.ToString());
+                        input.Clear();
+                    }
+                    catch
+                    {
+
+                    }
                 }
             });
             threadCommand.Start();
@@ -316,7 +321,7 @@ namespace Xiropht_Solo_Miner
         /// <summary>
         ///     First time to setting config file.
         /// </summary>
-        private static async Task FirstSettingConfig()
+        private static void FirstSettingConfig()
         {
             ClassMinerConfigObject = new ClassMinerConfig();
             ClassConsole.WriteLine("Do you want to use a proxy instead seed node? [Y/N]", 2);
@@ -409,7 +414,7 @@ namespace Xiropht_Solo_Miner
                     ClassUtility.RemoveSpecialCharacters(ClassMinerConfigObject.mining_wallet_address);
 
                 ClassConsole.WriteLine("Checking wallet address..", 4);
-                bool checkWalletAddress = await ClassTokenNetwork.CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address);
+                bool checkWalletAddress = ClassTokenNetwork.CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address).Result;
 
                 while (ClassMinerConfigObject.mining_wallet_address.Length <
                        ClassConnectorSetting.MinWalletAddressSize ||
@@ -422,7 +427,7 @@ namespace Xiropht_Solo_Miner
                     ClassMinerConfigObject.mining_wallet_address =
                         ClassUtility.RemoveSpecialCharacters(ClassMinerConfigObject.mining_wallet_address);
                     ClassConsole.WriteLine("Checking wallet address..", 4);
-                    checkWalletAddress = await ClassTokenNetwork.CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address);
+                    checkWalletAddress = ClassTokenNetwork.CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address).Result;
                 }
 
                 if (checkWalletAddress)
@@ -480,14 +485,14 @@ namespace Xiropht_Solo_Miner
             }
 
             Console.WriteLine("Start to connect to the network..");
-            await StartConnectMinerAsync().ConfigureAwait(false);
+            StartConnectMinerAsync().ConfigureAwait(false);
         }
 
         /// <summary>
         ///     Load config file.
         /// </summary>
         /// <returns></returns>
-        private static async Task<bool> LoadConfig(bool oldConfigType)
+        private static bool LoadConfig(bool oldConfigType)
         {
             string configContent = string.Empty;
 
@@ -545,7 +550,7 @@ namespace Xiropht_Solo_Miner
                                     ClassUtility.RemoveSpecialCharacters(ClassMinerConfigObject.mining_wallet_address);
                                 ClassConsole.WriteLine("Checking wallet address before to connect..", 4);
 
-                                bool checkWalletAddress = await ClassTokenNetwork.CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address);
+                                bool checkWalletAddress = ClassTokenNetwork.CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address).Result;
 
                                 while (ClassMinerConfigObject.mining_wallet_address.Length <
                                        ClassConnectorSetting.MinWalletAddressSize ||
@@ -560,7 +565,7 @@ namespace Xiropht_Solo_Miner
                                             .mining_wallet_address);
                                     ClassConsole.WriteLine("Checking wallet address before to connect..", 4);
                                     walletAddressCorrected = true;
-                                    checkWalletAddress = await ClassTokenNetwork.CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address);
+                                    checkWalletAddress = ClassTokenNetwork.CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address).Result;
                                 }
 
                                 if (checkWalletAddress)
@@ -692,7 +697,7 @@ namespace Xiropht_Solo_Miner
                         ClassUtility.RemoveSpecialCharacters(ClassMinerConfigObject.mining_wallet_address);
                     ClassConsole.WriteLine("Checking wallet address before to connect..", 4);
                     bool walletAddressCorrected = false;
-                    bool checkWalletAddress = await ClassTokenNetwork.CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address);
+                    bool checkWalletAddress = ClassTokenNetwork.CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address).Result;
                     while (ClassMinerConfigObject.mining_wallet_address.Length <
                            ClassConnectorSetting.MinWalletAddressSize ||
                            ClassMinerConfigObject.mining_wallet_address.Length >
@@ -705,7 +710,7 @@ namespace Xiropht_Solo_Miner
                             ClassUtility.RemoveSpecialCharacters(ClassMinerConfigObject.mining_wallet_address);
                         ClassConsole.WriteLine("Checking wallet address before to connect..", 4);
                         walletAddressCorrected = true;
-                        checkWalletAddress = await ClassTokenNetwork.CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address);
+                        checkWalletAddress = ClassTokenNetwork.CheckWalletAddressExistAsync(ClassMinerConfigObject.mining_wallet_address).Result;
                     }
 
                     if (checkWalletAddress)
@@ -1268,7 +1273,6 @@ namespace Xiropht_Solo_Miner
                     case ClassSoloMiningPacketEnumeration.SoloMiningRecvPacketEnumeration.SendCurrentBlockMining:
 
                         bool proxy = false;
-
                 var splitBlockContent = splitPacket[1].Split(new[] {"&"}, StringSplitOptions.None);
                         if (ClassMinerConfigObject.mining_enable_proxy)
                         {
@@ -1331,7 +1335,8 @@ namespace Xiropht_Solo_Miner
                                 if (ClassMinerConfigObject.mining_enable_proxy)
                                 {
                                     ClassConsole.WriteLine(
-                                        "Job range received from proxy: " + minRange + ClassConnectorSetting.PacketContentSeperator + maxRange + "", 2);
+                                        "Job range received from proxy: " + minRange +
+                                        ClassConnectorSetting.PacketContentSeperator + maxRange + "", 2);
                                 }
 
 
@@ -1350,7 +1355,8 @@ namespace Xiropht_Solo_Miner
                                     }
                                 }
 
-                                var splitMethod = ListeMiningMethodContent[idMethod].Split(new[] {"#"}, StringSplitOptions.None);
+                                var splitMethod = ListeMiningMethodContent[idMethod]
+                                    .Split(new[] {"#"}, StringSplitOptions.None);
 
                                 CurrentRoundAesRound = int.Parse(splitMethod[0]);
                                 CurrentRoundAesSize = int.Parse(splitMethod[1]);
@@ -1364,15 +1370,17 @@ namespace Xiropht_Solo_Miner
                                     if (i < ClassMinerConfigObject.mining_thread)
                                     {
                                         int iThread = i;
-                                        ThreadMining[i] = new Task(() => InitializeMiningThread(iThread), CancellationTaskMining.Token);
+                                        ThreadMining[i] = new Task(() => InitializeMiningThread(iThread),
+                                            CancellationTaskMining.Token);
                                         ThreadMining[i].Start();
                                     }
                                 }
                             }
-                            catch(Exception error)
+                            catch (Exception error)
                             {
                                 ClassConsole.WriteLine(
-                                    "Block template not completly received, stop mining and ask again the blocktemplate | Exception: "+error.Message,
+                                    "Block template not completly received, stop mining and ask again the blocktemplate | Exception: " +
+                                    error.Message,
                                     2);
                                 StopMining();
                             }
