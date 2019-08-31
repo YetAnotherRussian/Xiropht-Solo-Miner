@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using Xiropht_Solo_Miner.ConsoleMiner;
 
@@ -370,6 +371,49 @@ namespace Xiropht_Solo_Miner.Utility
             }
 
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// Necessary to get the amount of ram currently available on Linux OS. 
+        /// </summary>
+        /// <returns></returns>
+        public static string RunCommandLineMemoryAvailable()
+        {
+            string commandLine = "awk '/^Mem/ {print $4}' <(free -m)";
+            var errorBuilder = new StringBuilder();
+            var outputBuilder = new StringBuilder();
+            var arguments = $"-c \"{commandLine}\"";
+            using (var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "bash",
+                    Arguments = arguments,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = false
+                }
+            })
+            {
+                process.Start();
+                process.OutputDataReceived += (sender, args) => { outputBuilder.AppendLine(args.Data); };
+                process.BeginOutputReadLine();
+                process.ErrorDataReceived += (sender, args) => { errorBuilder.AppendLine(args.Data); };
+                process.BeginErrorReadLine();
+                if (!process.WaitForExit(500))
+                {
+                    var timeoutError =
+                        $@"Process timed out. Command line: bash {arguments}. Output: {outputBuilder} Error: {errorBuilder}";
+                    throw new Exception(timeoutError);
+                }
+
+                if (process.ExitCode == 0) return outputBuilder.ToString();
+
+                var error =
+                    $@"Could not execute process. Command line: bash {arguments}.Output: {outputBuilder} Error: {errorBuilder}";
+                throw new Exception(error);
+            }
         }
 
         #endregion

@@ -1,9 +1,15 @@
 ﻿using System;
+using System.Diagnostics;
+using System.IO;
+using System.Text.RegularExpressions;
+using Xiropht_Solo_Miner.Utility;
 
 namespace Xiropht_Solo_Miner.ConsoleMiner
 {
     public class ClassConsole
     {
+        private static PerformanceCounter _ramCounter;
+
         /// <summary>
         ///     Replace WriteLine function with forecolor system.
         /// </summary>
@@ -64,6 +70,30 @@ namespace Xiropht_Solo_Miner.ConsoleMiner
                 case "d":
                     WriteLine("Current Block: " + Program.CurrentBlockId + " Difficulty: " +
                               Program.CurrentBlockDifficulty);
+                    break;
+                case "c":
+                    if (Program.ClassMinerConfigObject.mining_enable_cache)
+                    {
+                        var allocationInMb = Process.GetCurrentProcess().PrivateMemorySize64 / 1e+6;
+                        float availbleRam = 0;
+
+                        if (Environment.OSVersion.Platform == PlatformID.Unix)
+                        {
+                            availbleRam = long.Parse(ClassUtility.RunCommandLineMemoryAvailable());
+                        }
+                        else
+                        {
+                            if (_ramCounter == null)
+                            {
+                                _ramCounter = new PerformanceCounter("Memory", "Available MBytes", true);
+                            }
+
+                            availbleRam = _ramCounter.NextValue();
+                        }
+
+                        WriteLine("Current math combinaisons cached: " +  Program.DictionaryCacheMining.Count.ToString("F0") + " | RAM Used: " + allocationInMb + " MB(s) | RAM Available: "+availbleRam+" MB(s).");
+                    }
+
                     break;
                 case "r":
                     WriteLine("Current Range: " + Program.CurrentBlockJob.Replace(";", "|"));

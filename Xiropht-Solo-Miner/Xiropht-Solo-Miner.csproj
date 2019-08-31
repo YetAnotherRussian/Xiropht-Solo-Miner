@@ -76,6 +76,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Algo\ClassAlgoMining.cs" />
+    <Compile Include="Cache\ClassMiningCache.cs" />
     <Compile Include="ConsoleMiner\ClassConsole.cs" />
     <Compile Include="Token\ClassTokenNetwork.cs" />
     <Compile Include="Utility\ClassUtility.cs" />
