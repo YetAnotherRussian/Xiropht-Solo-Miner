@@ -36,9 +36,9 @@ This release as been compiled into Debug Mode, because we are currently in priva
 
 Hashrate test [Updated 31/08/2019]:
 
--> Raspberry PI 3 (On Raspberian OS): 5,4 KH/s.
+-> Raspberry PI 3 (On Raspberian OS): 7,2 KH/s.
 
--> Ryzen 7 2700x No OC (On Windows 10): 100 to 112 KH/s.
+-> Ryzen 7 2700x No OC (On Windows 10): 135 to 155 KH/s.
 
 
 <h3>Help:</h3>
