@@ -118,14 +118,23 @@ namespace Xiropht_Solo_Miner.Algo
         /// <returns></returns>
         public static string EncryptXorShare(string text, string key)
         {
-            var result = new StringBuilder();
+            char[] textArr = new char[text.Length];
+            char[] keyArr = new char[key.Length];
 
-            for (int c = 0; c < text.Length; c++)
-                result.Append((char) ((uint) text[c] ^ (uint) key[c % key.Length]));
-            return result.ToString();
+            text.CopyTo(0, textArr, 0, text.Length);
+            key.CopyTo(0, keyArr, 0, key.Length);
+
+            int t = text.Length;
+            char[] result = new char[t];
+            int k = key.Length;
+
+            for (int i = 0; i < t; i++)
+            {
+                result[i] = (char)(textArr[i] ^ (uint)keyArr[i % k]);
+            }
+
+            return new string(result);
         }
-
-
 
         /// <summary>
         /// Generate a sha512 hash
@@ -142,7 +151,7 @@ namespace Xiropht_Solo_Miner.Algo
 
             var bytes = Encoding.UTF8.GetBytes(input);
 
-           return ByteArrayToHexString(Sha512ManagedMining[idThread].ComputeHash(bytes));
+            return ByteArrayToHexString(Sha512ManagedMining[idThread].ComputeHash(bytes));
 
         }
 
